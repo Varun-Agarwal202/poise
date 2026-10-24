@@ -34,9 +34,8 @@ const SQUARES = ["🟩", "🟨", "🟧", "🟫", "⬛"];
 
 /** Wordle-style text: title, total, one square per shape. */
 export function shareText(r: Rec) {
-  const site = String(
-    (import.meta as { env?: { VITE_SITE_URL?: string } }).env?.VITE_SITE_URL ??
-      "",
+  const site = (
+    (import.meta.env.VITE_SITE_URL as string | undefined) || ""
   ).replace(/\/$/, "");
   const lines = [
     `Poise No. ${noOf(r.d)}  ${r.tot}/500`,

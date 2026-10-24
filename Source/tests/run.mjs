@@ -16,6 +16,7 @@ const compiled = await bundle({
     "import.meta.env.PROD": "false",
     "import.meta.env.VITE_POSTHOG_KEY": "undefined",
     "import.meta.env.VITE_POSTHOG_HOST": "undefined",
+    "import.meta.env.VITE_SITE_URL": "undefined",
   },
   plugins: [
     {

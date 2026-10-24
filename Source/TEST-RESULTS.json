@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-24T04:41:52.581Z",
+  "checks": [
+    "All 15 historical objects retain exact geometry, mass centers and scoring inputs",
+    "1,200 daily sets / 6,000 silhouettes: no repeated IDs, similarity-normalized contours or rendered masks; valid mass, deterministic dates, leap day and no wraparound",
+    "Catalogue exhaustion keeps archive, stats, settings and home accessible without recycling a puzzle",
+    "Exact center stays still; equal-distance vertical and lateral misses share a score but correctly move differently",
+    "Pendulum is deterministic, mirrored, frame-rate independent and settles with its center below the pin",
+    "Repeated Drop pin callback scores once and persists exactly one round",
+    "Reduced-motion result stays at its original angle",
+    "Reload resumes at the next unplayed object",
+    "Full daily run stores five rounds, renders five thumbnails and cannot replay",
+    "Copy writes one PNG directly, preserves user activation, excludes navigation and confirms success without a dialog",
+    "Capture errors, clipboard denial and unsupported browsers recover inline with no download or sharing fallback",
+    "Home exposes only Home, Archive, Stats and Settings; no practice action",
+    "Resuming yesterday records an archive result without extending today’s streak",
+    "Malformed six-round record is backed up and excluded from scores",
+    "Touch drags enable a magnifier without displacing the pin or revealing the answer",
+    "Touch places the pin at the actual tap; release does not submit; viewport changes preserve its position on the object"
+  ]
+}

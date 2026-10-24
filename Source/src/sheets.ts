@@ -18,13 +18,14 @@ import { end } from "./end";
 import { LAST_DAY_INDEX } from "./unique";
 
 export const navBtns = () =>
-  `<nav class="primary-nav" aria-label="Main">${ib("hm", "home", "Home")}${ib("ar", "archive", "Archive")}${ib("st", "stats", "Stats")}${ib("se", "tune", "Settings")}</nav>`;
+  `<nav class="primary-nav" aria-label="Main">${ib("hm", "home", "Home")}${ib("ar", "archive", "Archive")}${ib("st", "stats", "Stats")}${ib("se", "tune", "Settings")}${ib("hp", "help", "How to play")}</nav>`;
 export function bindNav() {
   const actions: Record<string, () => void> = {
     hm: home,
     st: stats,
     ar: archive,
     se: settings,
+    hp: help,
   };
   for (const [id, action] of Object.entries(actions)) {
     const b = $maybe("#" + id);
@@ -67,6 +68,22 @@ const sw = (
   off = false,
 ) =>
   `<label class="sw"><span><b>${label}</b><small>${hint}</small></span><input type="checkbox" role="switch" data-k="${name}"${on ? " checked" : ""}${off ? " disabled" : ""}></label>`;
+
+function help() {
+  track("help_open", {});
+  sheet(
+    "How to play",
+    `<ol class="how">
+      <li>Five shapes a day. One attempt each. A new set tomorrow.</li>
+      <li>Place the pin where the shape balances — its center of mass. That point can sit in a gap, not only on the material.</li>
+      <li>Tap or click inside the dashed box to place it. Drag to adjust. Presses outside the box are ignored, so a near-miss on Drop pin will not move your pin.</li>
+      <li>Press <b>Drop pin</b> when you are ready. Closer pins score more. 100 takes a pin within a couple of millimetres.</li>
+      <li>A near miss tips a little. A wide miss swings. Distance decides your score, not how much it moves.</li>
+    </ol>
+    <p class="mute small">Arrow keys move the pin. Shift for bigger steps. Enter or Space drops it. On a phone, drag for a magnified view.</p>
+    <p class="mute small">Scores and your streak stay on this device. No account needed.</p>`,
+  );
+}
 
 function settings() {
   track("settings_open", {});

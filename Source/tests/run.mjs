@@ -454,9 +454,14 @@ ok(
 );
 // Clipboard tests exercise async capture and write failures; real PNG rendering is browser-tested.
 const copyButton = e.w.document.querySelector("#copy-result");
-assert.equal(copyButton.textContent, "Copy");
+assert.equal(copyButton.textContent, "Copy image");
+assert.equal(e.w.document.querySelector("#copy-text").textContent, "Copy text");
 assert.equal(e.w.document.querySelectorAll(".wordmark").length, 1);
-assert.equal(e.w.document.querySelectorAll(".result-actions button").length, 1);
+assert.equal(e.w.document.querySelectorAll(".result-actions button").length, 2);
+const text = e.api.sharing.shareText(rec);
+assert(text.startsWith(`Poise No. ${e.api.store.noOf(rec.d)}`));
+assert(text.includes(`${rec.tot}/500`));
+assert(/^[🟩🟨🟧🟫⬛]{5}$/u.test(text.split("\n")[1]));
 assert(!e.w.document.querySelector("#share-preview"));
 let writes = 0,
   writtenTypes = [];
@@ -510,7 +515,7 @@ for (const failure of ["render", "permission"]) {
   };
   await e.api.sharing.copyResult(rec);
   assert(!copyButton.disabled);
-  assert.equal(copyButton.textContent, "Copy");
+  assert.equal(copyButton.textContent, "Copy image");
   assert(
     e.w.document
       .querySelector("#copy-status")
@@ -532,11 +537,29 @@ assert(!e.w.document.querySelector("a[download]"));
 ok(
   "Capture errors, clipboard denial and unsupported browsers recover inline with no download or sharing fallback",
 );
+let pasted = "";
+Object.defineProperty(e.w.navigator, "clipboard", {
+  configurable: true,
+  value: {
+    writeText: async (s) => {
+      pasted = s;
+    },
+  },
+});
+await e.api.sharing.copyText(rec);
+assert.equal(pasted, e.api.sharing.shareText(rec));
+assert.equal(e.w.document.querySelector("#copy-text").textContent, "Copied");
 e.api.home.home();
 assert(e.w.document.querySelector(".home-rule").textContent.includes("gap"));
 assert(!e.w.document.body.textContent.includes("Practice"));
-assert.equal(e.w.document.querySelectorAll(".primary-nav button").length, 4);
-ok("Home exposes only Home, Archive, Stats and Settings; no practice action");
+assert.equal(e.w.document.querySelectorAll(".primary-nav button").length, 5);
+assert(e.w.document.querySelector("#hp"));
+e.w.document.querySelector("#hp").click();
+assert(e.w.document.querySelector("#sht").textContent.includes("How to play"));
+e.w.document.querySelector("#xs").click();
+ok(
+  "Home exposes Home, Archive, Stats, Settings and How to play; no practice action",
+);
 // Archive resumes after midnight must not count as today's completion.
 const old = {
   days: {},

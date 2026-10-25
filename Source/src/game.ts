@@ -179,15 +179,33 @@ export function live(v?: { m: Mode; d: string } | null) {
   return null;
 }
 
-function legend(R: Shape) {
-  const u = [
+function matsOf(R: Shape) {
+  return [
     ...new Set(
       R.parts
         .map((q) => String(q[0]).replace("+", ""))
         .filter((t) => t !== "X"),
     ),
   ].sort((a, b) => MAT[a][1] - MAT[b][1]);
-  return `<span class="lg">${u.map((t) => `<span><i style="background:${MAT[t][0] || R.a}"></i>${t} ${MAT[t][1]}</span>`).join("")}<span>g/cm³</span></span>`;
+}
+
+function legend(R: Shape) {
+  const u = matsOf(R);
+  const items = u
+    .map((t, i) => {
+      const tag =
+        u.length > 1 && i === 0
+          ? "light"
+          : u.length > 1 && i === u.length - 1
+            ? "heavy"
+            : "";
+      const name = t[0].toUpperCase() + t.slice(1);
+      return `<span class="lg-item"><i style="background:${MAT[t][0] || R.a}"></i><b>${name}</b><em>${MAT[t][1]}${tag ? " · " + tag : ""}</em></span>`;
+    })
+    .join("");
+  return `<div class="lg" aria-label="Materials, lightest first: ${u
+    .map((t) => `${t} ${MAT[t][1]} grams per cubic centimetre`)
+    .join(", ")}">${items}<span class="lg-unit">g/cm³</span></div>`;
 }
 const dots = (g: Game) =>
   `<span class="dots" role="img" aria-label="Shape ${Math.min(g.r + 1, RN)} of ${RN}">${[...Array(RN)].map((_, i) => `<i class="${i < g.res.length ? "g" + gi(g.res[i].pts) : i === g.r ? "cur" : ""}"></i>`).join("")}</span>`;
@@ -198,13 +216,7 @@ const KEY_HINT =
 const TAP_HINT = "Tap to place the pin, drag to adjust, then press Drop pin.";
 /** Plain-language description of the object, for the canvas label. Never says where it balances. */
 function describe(R: Shape) {
-  const u = [
-    ...new Set(
-      R.parts
-        .map((q) => String(q[0]).replace("+", ""))
-        .filter((t) => t !== "X"),
-    ),
-  ].sort((a, b) => MAT[a][1] - MAT[b][1]);
+  const u = matsOf(R);
   return `${R.name}. Made of ${u.join(" and ")}${u.length > 1 ? `: ${u[0]} is the lightest, ${u[u.length - 1]} the heaviest` : ""}.`;
 }
 
@@ -222,13 +234,13 @@ function round() {
   g.coach = g.r === 0 && flag("coach") && !playedCount();
   setTitle(`${"No. " + noOf(g.d)} · Shape ${g.r + 1} of ${RN}`);
   const hint = g.coach
-    ? "Place the pin at the balance point. You can adjust it before dropping."
+    ? "Heavier parts pull more. Place the pin, then drop it."
     : matchMedia("(pointer:coarse)").matches
       ? TAP_HINT
       : DRAG_HINT;
   app.innerHTML = `<header class="site-header"><span class="wordmark">Poise</span>${navBtns()}</header>
   <div class="round-header"><span class="mute">No. ${noOf(g.d)} / Object ${g.r + 1} of ${RN}</span>${dots(g)}<span><b id="sc">${total(g)}</b><span class="mute"> / 500</span></span></div>
-  <div id="stage"><canvas id="cv"></canvas></div><div class="foot fx" id="ft"><div class="object-heading"><h1 class="lede">${R.name}</h1></div>${legend(R)}<p class="small rule">Aim for the center of mass. It can lie in a gap.</p><span class="mute small" id="hint">${hint}</span><button class="btn" id="dp" disabled>Drop pin</button></div>`;
+  <div id="stage"><canvas id="cv"></canvas></div><div class="foot fx" id="ft"><div class="object-heading"><h1 class="lede">${R.name}</h1>${legend(R)}</div><p class="small rule">Aim for the center of mass. It can lie in a gap.</p><span class="mute small" id="hint">${hint}</span><button class="btn" id="dp" disabled>Drop pin</button></div>`;
   app.scrollTop = 0;
   bindNav();
   mount(draw);

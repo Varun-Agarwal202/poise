@@ -517,14 +517,13 @@ e.w.capturePending = null;
 assert.deepEqual(writtenTypes, ["image/png"]);
 assert.equal(copyButton.textContent, "Copied");
 assert(!copyButton.disabled);
-assert(
-  !e.w.captureOptions.filter(e.w.document.querySelector("[data-copy-exclude]")),
-);
-assert(
-  e.w.captureOptions.filter(e.w.document.querySelector("#share-card canvas")),
+assert(!e.w.document.querySelector("#share-card [data-copy-exclude]"));
+assert.equal(
+  e.w.document.querySelectorAll("#share-card .result-object canvas").length,
+  5,
 );
 ok(
-  "Copy writes one PNG directly, preserves user activation, excludes navigation and confirms success without a dialog",
+  "Copy writes one PNG directly, preserves user activation, and confirms success without a dialog",
 );
 for (const failure of ["render", "permission"]) {
   e.w.captureFailure = failure === "render";

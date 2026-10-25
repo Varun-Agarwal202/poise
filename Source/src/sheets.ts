@@ -75,7 +75,7 @@ function help() {
     "How to play",
     `<ol class="how">
       <li>Five shapes a day. One attempt each. A new set tomorrow.</li>
-      <li>Place the pin where the shape balances — its center of mass. That point can sit in a gap, not only on the material.</li>
+      <li>Place the pin where the shape balances, at its center of mass. That point can sit in a gap, not only on the material.</li>
       <li>Tap or click inside the dashed box to place it. Drag to adjust. Presses outside the box are ignored, so a near-miss on Drop pin will not move your pin.</li>
       <li>Press <b>Drop pin</b> when you are ready. Closer pins score more. 100 takes a pin within a couple of millimetres.</li>
       <li>A near miss tips a little. A wide miss swings. Distance decides your score, not how much it moves.</li>
@@ -106,7 +106,7 @@ function settings() {
   ${sw("cb", "Colour-blind friendly colours", "Use an alternative palette for score indicators.", prefs.cb)}
   ${sw("contrast", "Higher contrast", "Stronger text and outlines.", prefs.contrast)}
   ${sw("big", "Larger text", "Bigger type across the game.", prefs.big)}</div>
-  <h3>Keyboard</h3><p class="mute small">Tab to the shape, then use the arrow keys to move the pin. Hold Shift for bigger steps. Press Enter or Space to drop it. Tap anywhere in the play area to place the pin—even in a gap. Drag for a magnified view, then press Drop pin.</p>
+  <h3>Keyboard</h3><p class="mute small">Tab to the shape, then use the arrow keys to move the pin. Hold Shift for bigger steps. Press Enter or Space to drop it. Tap anywhere in the play area to place the pin, even in a gap. Drag for a magnified view, then press Drop pin.</p>
   <p class="mute small">Settings stay on this device and never change the puzzle or your score.</p>`,
   );
   dl.querySelectorAll<HTMLInputElement>(".setl input").forEach(

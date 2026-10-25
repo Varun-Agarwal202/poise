@@ -25,7 +25,7 @@ export function say(msg: string) {
   }, 60);
 }
 export const setTitle = (s: string) => {
-  document.title = s ? `${s} · Poise` : "Poise — the daily balancing game";
+  document.title = s ? `${s} · Poise` : "Poise: the daily balancing game";
 };
 export const eob = (u: number) =>
   1 + 2.7 * Math.pow(u - 1, 3) + 1.7 * Math.pow(u - 1, 2);

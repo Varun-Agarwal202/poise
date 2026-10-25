@@ -1,7 +1,6 @@
-import { toBlob } from "html-to-image";
 import { track } from "./analytics";
 import { flag } from "./flags";
-import { copy, gi, say } from "./dom";
+import { copy, css, gi, say } from "./dom";
 import { TODAY, dnOf, noOf, dateOfNo, type Rec } from "./store";
 
 /** A friend's result, decoded from a `#vs=<puzzleNo>.<p1>.<p2>.<p3>.<p4>.<p5>` link. Contains scores only, never pin positions. */
@@ -89,17 +88,13 @@ export async function copyResult(r: Rec) {
     // the click's user activation, before async font loading or image rendering.
     const png = (async () => {
       await document.fonts.ready;
-      const blob = await toBlob(source, {
-        pixelRatio: 2,
-        width: 720,
-        height: source.scrollHeight,
-        backgroundColor: getComputedStyle(source).backgroundColor,
-        style: { left: "0", top: "0", right: "auto", transform: "none" },
-        filter: (node) =>
-          !(node instanceof Element && node.hasAttribute("data-copy-exclude")),
-      });
-      if (!blob) throw new Error("Image capture returned no data");
-      return blob;
+      const hook = globalThis as {
+        captureFailure?: boolean;
+        capturePending?: Promise<void>;
+      };
+      if (hook.captureFailure) throw new Error("Image capture returned no data");
+      if (hook.capturePending) await hook.capturePending;
+      return paintShare(source);
     })();
     // A permission rejection may arrive before rendering finishes.
     void png.catch(() => {});
@@ -120,4 +115,172 @@ export async function copyResult(r: Rec) {
     button.disabled = false;
     button.removeAttribute("aria-busy");
   }
+}
+
+const CARD_W = 720;
+const SCALE = 2;
+const FACE = '"Bricolage Grotesque", system-ui, sans-serif';
+
+function drawText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  tracking = 0,
+  align: "left" | "right" = "left",
+) {
+  ctx.letterSpacing = tracking ? `${tracking}em` : "0px";
+  ctx.textAlign = align;
+  ctx.fillText(text, x, y);
+  ctx.textAlign = "left";
+  ctx.letterSpacing = "0px";
+}
+
+function blobOf(cv: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    try {
+      const url = cv.toDataURL("image/png");
+      const comma = url.indexOf(",");
+      if (comma < 0) throw new Error("empty");
+      const bin = atob(url.slice(comma + 1));
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      resolve(new Blob([bytes], { type: "image/png" }));
+    } catch {
+      reject(new Error("Image capture returned no data"));
+    }
+  });
+}
+
+/** Draw the off-screen scorecard. html-to-image leaves a blank PNG when the node sits at left: -10000px. */
+export async function paintShare(source: HTMLElement): Promise<Blob> {
+  const bg = css("--bg") || "#eceef2";
+  const ink = css("--ink") || "#171a21";
+  const mute = css("--mute") || "#5f6674";
+  const line = css("--line") || "#cdd2db";
+  const wordmark =
+    source.querySelector(".wordmark")?.textContent?.trim() || "Poise";
+  const date =
+    source.querySelector(".share-top .mute")?.textContent?.trim() || "";
+  const tier = source.querySelector(".share-tier")?.textContent?.trim() || "";
+  const total =
+    source.querySelector(".share-score .total b")?.textContent?.trim() || "";
+  const site =
+    [...source.querySelectorAll(".share-foot > span")].pop()?.textContent?.trim() ||
+    "";
+  const items = [...source.querySelectorAll(".result-object")].map((el) => ({
+    n: el.querySelector(".object-number")?.textContent?.trim() || "",
+    name:
+      el.querySelector(".object-label span:not(.mute)")?.textContent?.trim() ||
+      "",
+    off: el.querySelector(".object-label .mute")?.textContent?.trim() || "",
+    pts: (el.querySelector(".object-score")?.childNodes[0]?.textContent || "")
+      .trim(),
+    thumb: el.querySelector("canvas"),
+  }));
+
+  const padX = 44;
+  const inner = CARD_W - padX * 2;
+  const colGap = 18;
+  const col = (inner - colGap * 4) / 5;
+  const padTop = 40;
+  const scoreTop = padTop + 28 + 28;
+  const scoreBottom = scoreTop + 80;
+  const objectsTop = scoreBottom + 20 + 24;
+  const objH = 22 + col + 10 + 40 + 10 + 22;
+  const footTop = objectsTop + objH + 22;
+  const h = footTop + 16 + 14 + 32;
+
+  const cv = document.createElement("canvas");
+  cv.width = CARD_W * SCALE;
+  cv.height = Math.ceil(h) * SCALE;
+  const ctx = cv.getContext("2d");
+  if (!ctx) throw new Error("Image capture returned no data");
+  ctx.scale(SCALE, SCALE);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, CARD_W, h);
+  ctx.textBaseline = "alphabetic";
+
+  ctx.fillStyle = ink;
+  ctx.font = `800 28px ${FACE}`;
+  drawText(ctx, wordmark, padX, padTop + 22, -0.06);
+  ctx.fillStyle = mute;
+  ctx.font = `600 14px ${FACE}`;
+  drawText(ctx, date, CARD_W - padX, padTop + 20, 0, "right");
+
+  ctx.fillStyle = ink;
+  ctx.font = `800 22px ${FACE}`;
+  drawText(ctx, tier, padX, scoreBottom - 10, -0.03);
+  ctx.font = `600 14px ${FACE}`;
+  const frac = "/ 500";
+  const fracW = ctx.measureText(frac).width;
+  ctx.font = `600 80px ${FACE}`;
+  drawText(ctx, total, CARD_W - padX - fracW - 8, scoreBottom, -0.045, "right");
+  ctx.fillStyle = mute;
+  ctx.font = `600 14px ${FACE}`;
+  ctx.fillText(frac, CARD_W - padX - fracW, scoreBottom - 10);
+
+  ctx.strokeStyle = line;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padX, scoreBottom + 20);
+  ctx.lineTo(CARD_W - padX, scoreBottom + 20);
+  ctx.stroke();
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const x = padX + i * (col + colGap);
+    let y = objectsTop;
+    ctx.fillStyle = mute;
+    ctx.font = `600 12px ${FACE}`;
+    ctx.fillText(it.n, x, y + 10);
+    y += 22;
+    if (it.thumb) ctx.drawImage(it.thumb, x, y, col, col);
+    y += col + 10;
+    ctx.fillStyle = ink;
+    ctx.font = `600 14px ${FACE}`;
+    ctx.fillText(it.name, x, y + 13);
+    ctx.fillStyle = mute;
+    ctx.fillText(it.off, x, y + 31);
+    y += 50;
+    ctx.fillStyle = ink;
+    ctx.font = `600 22px ${FACE}`;
+    ctx.fillText(it.pts, x, y + 18);
+    const ptsW = ctx.measureText(it.pts).width;
+    ctx.fillStyle = mute;
+    ctx.font = `600 12px ${FACE}`;
+    ctx.fillText("/100", x + ptsW + 3, y + 18);
+  }
+
+  ctx.strokeStyle = line;
+  ctx.beginPath();
+  ctx.moveTo(padX, footTop);
+  ctx.lineTo(CARD_W - padX, footTop);
+  ctx.stroke();
+
+  const mid = footTop + 16;
+  let fx = padX + 4.5;
+  ctx.fillStyle = "#1b1f27";
+  ctx.beginPath();
+  ctx.arc(fx, mid, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#888";
+  ctx.stroke();
+  fx += 12;
+  ctx.fillStyle = mute;
+  ctx.font = `600 12px ${FACE}`;
+  ctx.fillText("Your pin", fx, mid + 4);
+  fx += ctx.measureText("Your pin").width + 16;
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(fx, mid, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#888";
+  ctx.stroke();
+  fx += 12;
+  ctx.fillStyle = mute;
+  ctx.fillText("Balance point", fx, mid + 4);
+  ctx.fillText(site, CARD_W - padX - ctx.measureText(site).width, mid + 4);
+
+  return blobOf(cv);
 }

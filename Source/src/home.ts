@@ -140,7 +140,7 @@ export function home() {
       ? `Continue · ${Math.min(cont.length + 1, RN)} of ${RN}`
       : "Play today’s five";
   app.innerHTML = `<header class="site-header"><span class="edition">No. ${NO}<br><span class="mute">${fmtDate(TODAY, true)}</span></span>${navBtns()}</header>
-  <div class="intro"><h1>Poise</h1><p class="pitch">Pin each shape at its balance point.</p><p class="home-rule mute small">Aim for the center of mass—even in a gap.<br>Closer pins score more.</p></div>
+  <div class="intro"><h1>Poise</h1><p class="pitch">Pin each shape at its balance point.</p><p class="home-rule mute small">Aim for the center of mass, even in a gap.<br>Closer pins score more.</p></div>
   <div id="stage"><canvas id="cv" aria-hidden="true"></canvas></div>
   <p class="cap mute small" id="cap" aria-hidden="true"></p>
   <div class="foot home-foot"><div class="edition"><span>${d ? "Today’s five · Complete" : "Today’s five"}</span><span class="mute">${tw?.id !== "classic" ? (tw?.name ?? "") : ""}</span></div>

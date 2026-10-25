@@ -277,8 +277,10 @@ h3 {
   overflow: auto;
   overscroll-behavior: contain;
   --pad: clamp(20px, 3.5vw, 48px);
-  padding: max(var(--pad), env(safe-area-inset-top)) var(--pad)
-    max(var(--pad), env(safe-area-inset-bottom));
+  padding: max(var(--pad), env(safe-area-inset-top, 0px))
+    max(var(--pad), env(safe-area-inset-right, 0px))
+    max(var(--pad), env(safe-area-inset-bottom, 0px))
+    max(var(--pad), env(safe-area-inset-left, 0px));
   max-width: 1440px;
   margin: auto;
 }
@@ -649,11 +651,92 @@ canvas {
 .copy-pair {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  align-items: center;
+  gap: 4px 16px;
 }
-#copy-result,
-#copy-text {
-  min-width: 148px;
+#copy-result {
+  min-width: 160px;
+}
+.text-btn {
+  border: 0;
+  background: none;
+  color: var(--ink);
+  min-height: 44px;
+  padding: 8px 2px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.text-btn:hover {
+  opacity: 0.7;
+}
+.share-card {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 720px;
+  padding: 40px 44px 32px;
+  background: var(--bg);
+  color: var(--ink);
+  pointer-events: none;
+}
+.share-card .result-objects {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+.share-card .result-object {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+}
+.share-card .object-label {
+  min-height: 40px;
+  font-size: 0.875rem;
+}
+.share-card .object-score {
+  font-size: 1.35rem;
+}
+.share-card .object-score small {
+  display: inline;
+  margin-left: 3px;
+  text-align: left;
+}
+.share-top,
+.share-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+.share-top .wordmark {
+  font-size: 1.75rem;
+}
+.share-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin: 28px 0 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.share-tier {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.share-card .total b {
+  font-size: 5rem;
+}
+.share-foot {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--mute);
 }
 #copy-status:not(:empty) {
   margin-top: 12px;
@@ -834,11 +917,18 @@ dialog::backdrop {
   }
   .play-screen #stage {
     flex: 1;
-    min-height: 250px;
+    min-height: 220px;
   }
   .play-screen .foot {
-    min-height: 210px;
-    gap: 12px;
+    min-height: 0;
+    gap: 10px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .play-screen .rule {
+    display: none;
+  }
+  .play-screen #hint {
+    font-size: 0.75rem;
   }
   .round-header {
     font-size: 0.8125rem;
@@ -904,10 +994,27 @@ dialog::backdrop {
   .result-actions {
     align-items: stretch;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+  }
+  .copy-pair {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  #copy-result {
+    width: 100%;
+    min-width: 0;
+  }
+  .text-btn {
+    width: 100%;
+    text-align: center;
   }
   .result-actions p {
     text-align: center;
+  }
+  .primary-nav .ib {
+    width: 40px;
+    height: 40px;
   }
   .sh {
     padding: 20px;

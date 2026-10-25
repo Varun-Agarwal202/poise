@@ -339,6 +339,15 @@ const d1 = physics.swing(body, frame, { x: 200, y: 160 }).dm;
 const d2 = physics.swing(body, frame, { x: 160, y: 200 }).dm;
 assert.equal(gen.scoreOf2(d1 * 100), gen.scoreOf2(d2 * 100));
 assert(gen.scoreOf2(d1 * 100) < 100);
+assert(gen.scoreOf2(2) > gen.scoreOf2(3));
+assert.equal(gen.scoreOf2(2), gen.scoreOf2(2.04));
+assert.equal(gen.cmShown(2.04), 2);
+let prev = 101;
+for (let cm = 0; cm <= 12.01; cm += 0.1) {
+  const s = gen.scoreOf2(cm);
+  assert(s <= prev, `score rose at ${cm.toFixed(1)} cm: ${s} > ${prev}`);
+  prev = s;
+}
 ok(
   "Exact center stays still; equal-distance vertical and lateral misses share a score but correctly move differently",
 );
@@ -446,7 +455,14 @@ assert.equal(
   rec.tot,
   rec.pts.reduce((a, b) => a + b, 0),
 );
-assert.equal(e.w.document.querySelectorAll(".result-object canvas").length, 5);
+assert.equal(
+  e.w.document.querySelectorAll("#result-sheet .result-object canvas").length,
+  5,
+);
+assert.equal(
+  e.w.document.querySelectorAll("#share-card .result-object canvas").length,
+  5,
+);
 game.start("daily");
 assert.equal(game.ui.ph, "end");
 assert.equal(store.db.streak, 1);
@@ -457,12 +473,16 @@ ok(
 const copyButton = e.w.document.querySelector("#copy-result");
 assert.equal(copyButton.textContent, "Copy image");
 assert.equal(e.w.document.querySelector("#copy-text").textContent, "Copy text");
-assert.equal(e.w.document.querySelectorAll(".wordmark").length, 1);
+assert.equal(
+  e.w.document.querySelectorAll("#result-sheet .wordmark").length,
+  1,
+);
 assert.equal(e.w.document.querySelectorAll(".result-actions button").length, 2);
 const text = e.api.sharing.shareText(rec);
 assert(text.startsWith(`Poise No. ${e.api.store.noOf(rec.d)}`));
 assert(text.includes(`${rec.tot}/500`));
 assert(/^[🟩🟨🟧🟫⬛]{5}$/u.test(text.split("\n")[1]));
+assert(e.w.document.querySelector("#share-card"));
 assert(!e.w.document.querySelector("#share-preview"));
 let writes = 0,
   writtenTypes = [];
@@ -501,9 +521,7 @@ assert(
   !e.w.captureOptions.filter(e.w.document.querySelector("[data-copy-exclude]")),
 );
 assert(
-  e.w.captureOptions.filter(
-    e.w.document.querySelector(".result-object canvas"),
-  ),
+  e.w.captureOptions.filter(e.w.document.querySelector("#share-card canvas")),
 );
 ok(
   "Copy writes one PNG directly, preserves user activation, excludes navigation and confirms success without a dialog",

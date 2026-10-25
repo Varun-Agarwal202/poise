@@ -1020,11 +1020,15 @@ export const famsFor = (seed: string) => {
   });
   return used;
 };
+/** One displayed decimal. Scoring uses this so “2.0 cm off” always beats “3.0 cm off”. */
+export const cmShown = (cm: number) => Math.round(cm * 10) / 10;
 /** Scoring by centimetres off. A tiny dead zone (0.2 cm) makes 100 reachable
  * with a truly precise pin; beyond that it falls off steadily:
  * 0.2→100, 0.5→97, 1→89, 2→72, 3→55, 4→42, 6→22, 8→11, 12→2. */
 export const scoreOf2 = (cm: number) =>
-  Math.round(100 * Math.exp(-Math.pow(Math.max(0, cm - 0.2) / 4.2, 1.3)));
+  Math.round(
+    100 * Math.exp(-Math.pow(Math.max(0, cmShown(cm) - 0.2) / 4.2, 1.3)),
+  );
 /** Largest distance that still rounds to 100. Pins this close hold still when dropped. */
 export const PERFECT_CM = 0.271;
 export const scoreOf = (e: number) => scoreOf2(e * EXT * 100);

@@ -70,7 +70,7 @@ export async function copyText(r: Rec) {
 
 /** One click copies the visible results as PNG, with no dialog or download fallback. */
 export async function copyResult(r: Rec) {
-  const source = document.querySelector<HTMLElement>("#result-sheet");
+  const source = document.querySelector<HTMLElement>("#share-card");
   const button = document.querySelector<HTMLButtonElement>("#copy-result");
   const status = document.querySelector<HTMLElement>("#copy-status");
   if (!source || !button || !status || button.disabled) return;
@@ -91,7 +91,10 @@ export async function copyResult(r: Rec) {
       await document.fonts.ready;
       const blob = await toBlob(source, {
         pixelRatio: 2,
+        width: 720,
+        height: source.scrollHeight,
         backgroundColor: getComputedStyle(source).backgroundColor,
+        style: { left: "0", top: "0", right: "auto", transform: "none" },
         filter: (node) =>
           !(node instanceof Element && node.hasAttribute("data-copy-exclude")),
       });

@@ -1,7 +1,7 @@
 import {
   build,
-  scoreOf,
   scoreOf2,
+  cmShown,
   EXT,
   MAT,
   type Shape,
@@ -102,7 +102,7 @@ export const todaySet = () => {
   return today;
 };
 
-const cmOf = (dm: number) => +(dm * 100).toFixed(2);
+const cmOf = (dm: number) => cmShown(dm * 100);
 const total = (g: Game) => g.res.reduce((a, b) => a + b.pts, 0);
 
 function verdict(cm: number, p: Swing) {
@@ -480,7 +480,7 @@ function commit() {
   $<HTMLButtonElement>("#dp").disabled = true;
   const { dm, ps } = swing(R, gm, P, RM ? 0 : SEAT),
     e = dm / EXT,
-    pts = g.tw ? scoreOf2(dm * 100) : scoreOf(e);
+    pts = scoreOf2(cmOf(dm));
   if (RM) ps.th = 0;
   g.ps = ps;
   g.cur = {

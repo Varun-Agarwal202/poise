@@ -711,22 +711,8 @@ export interface Twist {
 export const TW: Record<string, Twist> = Object.fromEntries(
   (<[string, string, string, string, number, string?][]>[
     ["classic", "", "Classic", "Earth gravity, no tricks.", G0],
-    [
-      "moon",
-      "",
-      "Low gravity",
-      "A slower swing. The same precise scoring.",
-      1.62,
-      "on the Moon",
-    ],
-    [
-      "jupiter",
-      "",
-      "High gravity",
-      "A faster swing. The same precise scoring.",
-      24.8,
-      "on Jupiter",
-    ],
+    ["moon", "", "Classic", "", G0],
+    ["jupiter", "", "Classic", "", G0],
     ["metal", "", "Heavy metal", "Steel or gold shifts the balance.", G0],
     ["feather", "", "Featherweight", "Cork, wood and plastic only.", G0],
     ["holes", "", "Cutouts", "Holes punched through everything.", G0],

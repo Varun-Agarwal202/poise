@@ -9,7 +9,6 @@ import {
   fmtDate,
   streakNow,
   playedCount,
-  puzzleOf,
 } from "./store";
 import { track } from "./analytics";
 import { home } from "./home";
@@ -100,7 +99,7 @@ function settings() {
     ["desktop", "Desktop"],
   ])}
   <p class="mute small">Auto fits your window. Choose Phone for a stacked page or Desktop for a side-by-side layout.</p>
-  ${sw("motion", "Reduce motion", sysRM() ? "On, because your device asks for calmer animation." : "Reveal the answer without swinging or bouncing.", prefs.motion === "reduce" || sysRM(), sysRM())}
+  ${sw("motion", "Reduce motion", sysRM() ? "On, because your device asks for calmer movement." : "Reveal the answer without swinging or bouncing.", prefs.motion === "reduce" || sysRM(), sysRM())}
   ${sw("sound", "Sound", "Soft tones when you drop and when a score lands.", prefs.sound)}
   ${"vibrate" in navigator ? sw("haptics", "Vibration", "A light tap when you grab and drop the pin.", prefs.haptics) : ""}
   ${sw("cb", "Colour-blind friendly colours", "Use an alternative palette for score indicators.", prefs.cb)}
@@ -152,11 +151,9 @@ function archive() {
   const rows: string[] = [];
   for (let n = Math.min(dnOf(TODAY), LAST_DAY_INDEX) + 1; n >= 1; n--) {
     const d = dateOfNo(n),
-      r = db.days[d],
-      tw = puzzleOf(d).tw,
-      tl = tw && tw.id !== "classic" ? tw : null;
+      r = db.days[d];
     rows.push(
-      `<button class="arow" data-d="${d}" aria-label="No. ${noOf(d)}${tl ? ", " + tl.name : ""}, ${r ? "scored " + r.tot : "not played"}"><span class="al"><b>No. ${noOf(d)}</b><span class="mute small">${d === TODAY ? "Today" : fmtDate(d)}${tl ? " · " + tl.name : ""}</span></span>${r ? gdots(r.pts) + `<b class="sc">${r.tot}</b>` : `<span class="play">${db.pg[d] ? "Resume" : "Play"}</span>`}</button>`,
+      `<button class="arow" data-d="${d}" aria-label="No. ${noOf(d)}, ${r ? "scored " + r.tot : "not played"}"><span class="al"><b>No. ${noOf(d)}</b><span class="mute small">${d === TODAY ? "Today" : fmtDate(d)}</span></span>${r ? gdots(r.pts) + `<b class="sc">${r.tot}</b>` : `<span class="play">${db.pg[d] ? "Resume" : "Play"}</span>`}</button>`,
     );
   }
   const dl = sheet(

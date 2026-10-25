@@ -30,7 +30,7 @@ import {
   RM,
   GRADES,
   gi,
-  tierOf,
+  percentileOf,
   countUp,
   say,
   setTitle,
@@ -107,7 +107,7 @@ const total = (g: Game) => g.res.reduce((a, b) => a + b.pts, 0);
 
 function verdict(cm: number, p: Swing) {
   const accuracy = `${cm.toFixed(1)} cm from the center of mass.`;
-  if (RM) return `${accuracy} Motion is off; distance determines your score.`;
+  if (RM) return `${accuracy} Motion is off.`;
   const degrees = (p.peak * 180) / Math.PI;
   const motion =
     degrees < 0.5
@@ -115,7 +115,7 @@ function verdict(cm: number, p: Swing) {
       : degrees < 5
         ? "Only a slight rotation."
         : `It swung ${Math.round(degrees)}° from its starting pose.`;
-  return `${accuracy} ${motion} Distance determines your score.`;
+  return `${accuracy} ${motion}`;
 }
 
 export function start(m: Mode, d = TODAY) {
@@ -223,11 +223,9 @@ function round() {
   setTitle(`${"No. " + noOf(g.d)} · Shape ${g.r + 1} of ${RN}`);
   const hint = g.coach
     ? "Place the pin at the balance point. You can adjust it before dropping."
-    : g.r === 0 && g.tw && g.tw.id !== "classic"
-      ? `${g.tw.name}: ${g.tw.blurb}`
-      : matchMedia("(pointer:coarse)").matches
-        ? TAP_HINT
-        : DRAG_HINT;
+    : matchMedia("(pointer:coarse)").matches
+      ? TAP_HINT
+      : DRAG_HINT;
   app.innerHTML = `<header class="site-header"><span class="wordmark">Poise</span>${navBtns()}</header>
   <div class="round-header"><span class="mute">No. ${noOf(g.d)} / Object ${g.r + 1} of ${RN}</span>${dots(g)}<span><b id="sc">${total(g)}</b><span class="mute"> / 500</span></span></div>
   <div id="stage"><canvas id="cv"></canvas></div><div class="foot fx" id="ft"><div class="object-heading"><h1 class="lede">${R.name}</h1></div>${legend(R)}<p class="small rule">Aim for the center of mass. It can lie in a gap.</p><span class="mute small" id="hint">${hint}</span><button class="btn" id="dp" disabled>Drop pin</button></div>`;
@@ -526,7 +524,6 @@ function result() {
   $("#ft").innerHTML =
     `<div class="row pop"><span class="big c${k}">${GRADES[k][1]}</span><span class="ptw"><span class="pts" id="rp">+0</span>${vs ? `<span class="mute small">Friend +${vs.pts[g.r]}</span>` : ""}</span></div>
   <span class="mute small">${verdict(cm, g.ps!)}</span>
-  <span class="small reveal-key">Original pose · Pin = your guess · Ring = center of mass</span>
   <span class="vh" id="rs">${GRADES[k][1]}. ${verdict(cm, g.ps!)} ${c.pts} points. Total ${tot} so far.</span>
   <button class="btn" id="nx" aria-describedby="rs">${lastR ? "See results" : "Next shape"}</button>`;
   setTitle(`${GRADES[k][1]} +${c.pts} · Shape ${g.r + 1} of ${RN}`);
@@ -589,7 +586,7 @@ function finish() {
     track("daily_complete", {
       puzzle: dnOf(g.d) + 1,
       total: tot,
-      tier: tierOf(tot),
+      percentile: percentileOf(tot),
       streak: db.streak,
       twist: g.tw?.id ?? "none",
     });

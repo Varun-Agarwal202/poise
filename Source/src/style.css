@@ -1,3 +1,4 @@
+/* tastemaker: daily-game | quiet-editorial | original neutral palette | contrast verified | critique c4 s4 h4 sp4 r4 ch4 m4 t4 sa4 a4 p4 */
 @font-face {
   font-family: "Bricolage Grotesque";
   font-style: normal;
@@ -42,7 +43,7 @@ html[data-big] {
 .seg {
   display: flex;
   gap: 0;
-  border-radius: 12px;
+  border-radius: var(--r-control);
   box-shadow: inset 0 0 0 1.5px var(--line);
   padding: 3px;
 }
@@ -61,7 +62,7 @@ html[data-big] {
   display: grid;
   place-items: center;
   min-height: 44px;
-  border-radius: 9px;
+  border-radius: var(--r-sheet);
   font-weight: 800;
   font-size: 0.95rem;
   transition: background 0.15s ease-out;
@@ -114,7 +115,7 @@ html[data-big] {
   width: 52px;
   height: 32px;
   margin: 0;
-  border-radius: 999px;
+  border-radius: var(--r-round);
   background: transparent;
   box-shadow: inset 0 0 0 2px var(--mute);
   position: relative;
@@ -130,7 +131,7 @@ html[data-big] {
   top: 5px;
   width: 22px;
   height: 22px;
-  border-radius: 50%;
+  border-radius: var(--r-circle);
   background: var(--mute);
   transition:
     transform 0.18s ease-out,
@@ -160,6 +161,10 @@ html[data-big] {
   }
 }
 :root {
+  --r-sheet: 4px;
+  --r-control: 8px;
+  --r-round: 999px;
+  --r-circle: 50%;
   --bg: #eceef2;
   --ink: #171a21;
   --mute: #5f6674;
@@ -290,6 +295,8 @@ h3 {
   justify-content: space-between;
   gap: 20px;
   min-height: 48px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
 }
 .wordmark {
   font-size: 1.75rem;
@@ -299,6 +306,10 @@ h3 {
 .primary-nav {
   display: flex;
   gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: color-mix(in srgb, var(--card) 72%, transparent);
 }
 .lk {
   border: 0;
@@ -307,7 +318,7 @@ h3 {
   padding: 10px 12px;
   min-height: 44px;
   font-size: 0.875rem;
-  border-radius: 6px;
+  border-radius: var(--r-sheet);
 }
 .lk:hover {
   color: var(--ink);
@@ -322,7 +333,7 @@ h3 {
 }
 
 .btn {
-  border: 0;
+  border: 1px solid color-mix(in srgb, var(--btn) 82%, #000);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -330,17 +341,19 @@ h3 {
   background: var(--btn);
   color: var(--btni);
   min-height: 54px;
-  border-radius: 999px;
+  border-radius: var(--r-control);
   padding: 12px 24px;
   font-size: 1.0625rem;
   font-weight: 800;
-  transition: opacity 0.16s;
-}
-.btn:hover {
-  opacity: 0.82;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--btn) 70%, #000);
+  transition:
+    transform 0.16s ease-out,
+    box-shadow 0.16s ease-out,
+    opacity 0.16s ease-out;
 }
 .btn:active {
-  opacity: 0.65;
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--btn) 70%, #000);
 }
 .btn.ghost {
   background: transparent;
@@ -359,7 +372,7 @@ h3 {
 }
 .primary-nav .ib {
   background: transparent;
-  border-radius: 10px;
+  border-radius: var(--r-sheet);
   color: var(--mute);
 }
 .primary-nav .ib:hover {
@@ -368,6 +381,11 @@ h3 {
 }
 #stage {
   min-height: 260px;
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sheet);
+  background-color: color-mix(in srgb, var(--card) 46%, transparent);
+  box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--bg) 76%, transparent);
 }
 .play-screen #stage {
   grid-column: 2;
@@ -402,6 +420,8 @@ canvas {
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
   line-height: 1.4;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
 }
 .home-foot .edition {
   display: flex;
@@ -412,6 +432,9 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 .set canvas {
   width: 44px;
@@ -453,10 +476,6 @@ canvas {
 .rule {
   max-width: 32em;
 }
-.reveal-key {
-  color: var(--mute);
-  font-size: 0.8125rem;
-}
 .object-heading {
   display: flex;
   align-items: baseline;
@@ -482,7 +501,7 @@ canvas {
   width: 10px;
   height: 10px;
   margin-right: 6px;
-  border-radius: 2px;
+  border-radius: var(--r-sheet);
 }
 .row {
   display: flex;
@@ -512,7 +531,7 @@ canvas {
   width: 7px;
   height: 7px;
   border: 1px solid var(--edge);
-  border-radius: 50%;
+  border-radius: var(--r-circle);
 }
 .dots i.cur {
   background: var(--ink);
@@ -554,9 +573,10 @@ canvas {
   gap: 0;
 }
 #result-sheet {
-  background: var(--bg);
-  padding: 16px 16px 20px;
-  margin: -16px -16px 0;
+  background: var(--card);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sheet);
 }
 .receipt-heading {
   display: flex;
@@ -575,6 +595,48 @@ canvas {
 }
 .result-summary h1 {
   margin: 6px 0;
+}
+.rank-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 13px;
+  border-radius: var(--r-round);
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 1rem;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+.rank-summary {
+  width: min(340px, 48vw);
+}
+.rank-curve {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: 68px;
+  color: var(--ink);
+  overflow: visible;
+}
+.rank-area {
+  fill: color-mix(in srgb, var(--ink) 9%, transparent);
+}
+.rank-line {
+  fill: none;
+  stroke: var(--mute);
+  stroke-width: 1.5;
+}
+.rank-marker {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-dasharray: 2 2;
+}
+.rank-dot {
+  fill: currentColor;
+  stroke: var(--card);
+  stroke-width: 2;
 }
 .total {
   display: flex;
@@ -604,6 +666,12 @@ canvas {
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
+  padding-left: 16px;
+  border-left: 1px solid var(--line);
+}
+.result-object:first-child {
+  padding-left: 0;
+  border-left: 0;
 }
 .result-object canvas {
   width: 100%;
@@ -724,9 +792,15 @@ canvas {
   border-bottom: 1px solid var(--line);
 }
 .share-tier {
-  font-size: 1.35rem;
+  font-size: 1rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.055em;
+}
+.share-rank {
+  width: 250px;
+}
+.share-rank .rank-curve {
+  height: 56px;
 }
 .share-card .total b {
   font-size: 5rem;
@@ -765,8 +839,8 @@ canvas {
 dialog {
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--bg);
+  border-radius: var(--r-sheet);
+  background: var(--card);
   color: var(--ink);
   width: calc(100% - 32px);
   max-width: 540px;
@@ -794,7 +868,7 @@ dialog::backdrop {
   width: 44px;
   height: 44px;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--r-control);
   color: var(--ink);
   background: var(--card);
 }
@@ -817,7 +891,7 @@ dialog::backdrop {
 .trk {
   height: 8px;
   background: var(--card);
-  border-radius: 3px;
+  border-radius: var(--r-sheet);
   overflow: hidden;
 }
 .trk i {
@@ -834,11 +908,12 @@ dialog::backdrop {
   align-items: center;
   gap: 16px;
   text-align: left;
-  padding: 14px;
-  background: var(--card);
+  padding: 14px 2px;
+  background: transparent;
   color: var(--ink);
   border: 0;
-  border-radius: 8px;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
 }
 .arow:hover {
   outline: 1px solid var(--edge);
@@ -866,7 +941,7 @@ dialog::backdrop {
   background: var(--ink);
   color: var(--bg);
   padding: 12px 20px;
-  border-radius: 999px;
+  border-radius: var(--r-control);
   z-index: 100;
   opacity: 0;
   pointer-events: none;
@@ -903,6 +978,16 @@ dialog::backdrop {
   }
   .site-header {
     gap: 8px;
+  }
+  .play-screen .site-header {
+    position: relative;
+    width: 100%;
+  }
+  .play-screen .site-header .primary-nav {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    right: 0;
   }
   .primary-nav {
     gap: 0;
@@ -952,6 +1037,12 @@ dialog::backdrop {
   .result-summary h1 {
     font-size: 1.5rem;
   }
+  .rank-summary {
+    width: min(230px, 64vw);
+  }
+  .rank-curve {
+    height: 54px;
+  }
   .result-summary .total {
     flex-direction: column;
     align-items: flex-end;
@@ -969,6 +1060,9 @@ dialog::backdrop {
     grid-template-columns: 16px 68px minmax(0, 1fr) auto;
     align-items: center;
     gap: 8px;
+    padding: 8px 0;
+    border-left: 0;
+    border-bottom: 1px solid var(--line);
   }
   .result-object .object-label {
     min-height: 0;
@@ -1186,6 +1280,11 @@ dialog::backdrop {
     transition: none !important;
   }
 }
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+}
 @media (forced-colors: active) {
   .btn,
   .ib,
@@ -1240,7 +1339,7 @@ dialog::backdrop {
   display: inline-block;
   width: 9px;
   height: 9px;
-  border-radius: 50%;
+  border-radius: var(--r-circle);
   border: 1px solid #888;
 }
 .pin-key .key-player {

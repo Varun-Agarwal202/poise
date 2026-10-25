@@ -40,13 +40,13 @@ The browser completed a real image-copy operation and displayed Copied. The auto
 
 ## Physics and feedback
 
-The previous simulation added a spring that pulled the object toward its starting angle and injected a random initial tilt. Both are removed. The new simulation uses gravity around the pin, the object's mass distribution, the parallel-axis moment of inertia, and viscous damping. Fixed simulation steps make it deterministic across display frame rates.
+The wobble is deterministic and distance-driven. Exact-center pins stay still, near misses tip slightly, and wider misses rotate farther. Shape inertia creates a small natural difference in pace, but the angular frequency is bounded so one daily seed or object cannot become dramatically faster than another.
 
-A pin directly above the center of mass can be off target yet produce no rotation. A pin the same distance to the side produces torque and swings. These should receive the same accuracy score: the score measures distance to the center of mass, not rotation. The game now states this and reports the measured rotation. Exact-center pins stay still. An exactly inverted, unperturbed equilibrium also remains still in the idealized simulation; no fake random kick is applied.
+The response uses a damped rotational target with one soft overshoot. Equal-distance misses now produce comparable motion even when the pins are placed in different directions, matching the accuracy feedback players expect from the game.
 
 After the swing, the object returns briefly to its original pose for an accuracy diagram: the pin, target ring and connecting error line. Reduced motion skips the swing and return animation. The reveal says motion is off rather than describing an animation that did not happen. Grade labels now describe aim instead of asserting that the object was level or tilted.
 
-The governing physical-pendulum relationship is consistent with [OpenStax, Pendulums](https://openstax.org/books/university-physics-volume-1/pages/15-4-pendulums). The short seating ease, damping and maximum 4-second presentation are game choices, not a frictionless laboratory model.
+The seating ease, damping, bounded frequency and maximum 4-second presentation are game-feedback choices rather than a frictionless laboratory model.
 
 ## Touch and reliability
 
@@ -60,7 +60,7 @@ The governing physical-pendulum relationship is consistent with [OpenStax, Pendu
 
 - **Scoring** (`scoreOf2` in `src/gen.ts`) is one curve for every puzzle: 100 within 0.2 cm, then `100·exp(-((cm-0.2)/4.2)^1.3)`. Examples: 1 cm→89, 2→72, 3→55, 4→42, 6→22, 8→11.
 - **Pin box:** the pin can only be placed inside the object's box. Presses outside it (for example a near-miss on Drop pin) are ignored, and dragging or arrow keys clamp to its edge.
-- **Wobble** (`src/physics.ts`): lighter damping (0.32) for visible overshoot, 1.25x time scale, a minimum swing frequency, and a grip rule. How far the object tips scales with the miss (`tilt()`): a pin scoring 100 holds still, 0.5 cm tips about 5°, 2 cm about 41°, wide misses swing about 90°.
+- **Wobble** (`src/physics.ts`): damping of 0.46, real-time simulation speed, and a narrow 4.1 to 5.4 rad/s frequency range. How far the object tips scales with the miss (`tilt()`): a pin scoring 100 holds still, 0.5 cm tips about 5°, 2 cm about 41°, and wide misses approach 90°.
 
 ## Verification
 

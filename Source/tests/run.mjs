@@ -315,7 +315,7 @@ exhausted.close();
 ok(
   "Catalogue exhaustion keeps archive, stats, settings and home accessible without recycling a puzzle",
 );
-// Gravity acts about the chosen pin, with no random nudge or artificial spring.
+// Wobble is deterministic, distance-driven and speed-bounded across shapes.
 const { physics } = e.api;
 const body = gen.build(
   store.puzzleOf("2026-10-26").seed,
@@ -333,7 +333,7 @@ assert.equal(centered.peak, 0);
 assert.equal(physics.seated(physics.swing(body, frame, frame.c, 0).ps), 1);
 const hanging = simulate({ x: 200, y: 160 });
 const sideways = simulate({ x: 160, y: 200 });
-assert.equal(hanging.th, 0);
+assert(Math.abs(hanging.th - sideways.th) < 0.02);
 assert(sideways.peak > 1);
 const d1 = physics.swing(body, frame, { x: 200, y: 160 }).dm;
 const d2 = physics.swing(body, frame, { x: 160, y: 200 }).dm;
@@ -342,6 +342,16 @@ assert(gen.scoreOf2(d1 * 100) < 100);
 assert(gen.scoreOf2(2) > gen.scoreOf2(3));
 assert.equal(gen.scoreOf2(2), gen.scoreOf2(2.04));
 assert.equal(gen.cmShown(2.04), 2);
+assert.equal(gen.TW.moon.g, gen.TW.classic.g);
+assert.equal(gen.TW.jupiter.g, gen.TW.classic.g);
+for (const P of [
+  { x: 160, y: 200 },
+  { x: 195, y: 200 },
+  { x: 120, y: 200 },
+]) {
+  const w = Math.sqrt(physics.swing(body, frame, P, 0).ps.w2);
+  assert(w >= physics.W_MIN && w <= physics.W_MAX);
+}
 let prev = 101;
 for (let cm = 0; cm <= 12.01; cm += 0.1) {
   const s = gen.scoreOf2(cm);
@@ -349,7 +359,7 @@ for (let cm = 0; cm <= 12.01; cm += 0.1) {
   prev = s;
 }
 ok(
-  "Exact center stays still; equal-distance vertical and lateral misses share a score but correctly move differently",
+  "Exact center stays still; equal-distance misses share a score and comparable wobble",
 );
 const mirror = simulate({ x: 240, y: 200 });
 assert(Math.abs(mirror.th + sideways.th) < 1e-9);
@@ -364,8 +374,20 @@ assert(slight.peak > 0 && slight.peak < sideways.peak / 3);
 const near = simulate({ x: 200.0001, y: 200 });
 assert(Number.isFinite(near.th));
 assert.equal(near.th, 0);
+const settleSeconds = (cm) => {
+  const px = ((cm / 100) * frame.B) / gen.BOXM;
+  const p = physics.swing(body, frame, { x: frame.c.x - px, y: frame.c.y }).ps;
+  for (let i = 0; i < 4 * 60; i++) {
+    physics.step(p, 1 / 60);
+    if (p.calm > 0.14) return (i + 1) / 60;
+  }
+  return 4;
+};
+const settleTimes = [0.5, 2, 6].map(settleSeconds);
+assert(settleTimes.every((seconds) => seconds >= physics.MIN_WOBBLE_TIME));
+assert(settleTimes.every((seconds) => seconds < 3.8));
 ok(
-  "Pendulum is deterministic, mirrored, frame-rate independent and settles at the tilt its miss allows",
+  "Wobble is deterministic, mirrored, frame-rate independent and settles at the tilt its miss allows",
 );
 
 // Make a contact sheet for visual QA of every new authored silhouette.
@@ -424,12 +446,15 @@ assert.equal(game.ui.ph, "result");
 ok("Repeated Drop pin callback scores once and persists exactly one round");
 assert.equal(game.G.ps.th, 0);
 assert(e.w.document.querySelector("#ft").textContent.includes("Motion is off"));
+assert.equal(e.w.document.querySelector(".reveal-key"), null);
 assert(
-  e.w.document
-    .querySelector(".reveal-key")
-    .textContent.includes("center of mass"),
+  !e.w.document
+    .querySelector("#ft")
+    .textContent.includes("Distance determines"),
 );
-ok("Reduced-motion result stays at its original angle");
+ok(
+  "Reduced-motion result stays at its original angle with concise result copy",
+);
 const snapshot = JSON.parse(e.w.localStorage.getItem("poise:v4"));
 const resume = env("2026-10-25", snapshot, { m: "daily", d: "2026-10-25" });
 const lv = resume.api.game.live();
@@ -462,6 +487,13 @@ assert.equal(
 assert.equal(
   e.w.document.querySelectorAll("#share-card .result-object canvas").length,
   5,
+);
+assert.match(e.w.document.querySelector("#eh").textContent, /^Top \d+%$/);
+assert.equal(e.w.document.querySelectorAll(".rank-curve").length, 2);
+assert(
+  !e.w.document
+    .querySelector("#result-sheet")
+    .textContent.includes("Getting closer"),
 );
 game.start("daily");
 assert.equal(game.ui.ph, "end");

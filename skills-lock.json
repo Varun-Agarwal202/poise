@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "tastemaker": {
+      "source": "codeswithroh/tastemaker",
+      "sourceType": "github",
+      "skillPath": "skills/tastemaker/SKILL.md",
+      "computedHash": "ef080ad8d242527d63cee1d94b7e5030aa8988cc20a0029f6a596d321843af9d"
+    }
+  }
+}

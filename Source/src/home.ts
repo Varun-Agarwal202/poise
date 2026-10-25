@@ -22,7 +22,6 @@ import {
   NO,
   fmtDate,
   untilNext,
-  puzzleOf,
   recoveredSave,
   available,
 } from "./store";
@@ -125,7 +124,6 @@ export function home() {
   const d = db.days[TODAY],
     cont = db.pg[TODAY],
     today = todaySet();
-  const tw = puzzleOf(TODAY).tw;
   if (!demo) {
     const raw = mk("p3|demo" + TODAY + "|classic", 1, "spoon", TW.classic);
     raw.rot = -0.45;
@@ -143,11 +141,11 @@ export function home() {
   <div class="intro"><h1>Poise</h1><p class="pitch">Pin each shape at its balance point.</p><p class="home-rule mute small">Aim for the center of mass, even in a gap.<br>Closer pins score more.</p></div>
   <div id="stage"><canvas id="cv" aria-hidden="true"></canvas></div>
   <p class="cap mute small" id="cap" aria-hidden="true"></p>
-  <div class="foot home-foot"><div class="edition"><span>${d ? "Today’s five · Complete" : "Today’s five"}</span><span class="mute">${tw?.id !== "classic" ? (tw?.name ?? "") : ""}</span></div>
+  <div class="foot home-foot"><div class="edition"><span>${d ? "Today’s five · Complete" : "Today’s five"}</span></div>
   <div class="set" role="img" aria-label="Today’s five objects">${today.map(() => `<canvas width="${80 * dpr}" height="${80 * dpr}"></canvas>`).join("")}</div>
   ${recoveredSave ? '<p class="small mute">An invalid score was set aside. Valid results are safe.</p>' : ""}
   <button class="btn" id="go">${label}</button>
-  <p class="small mute"${d ? " data-next" : ""}>${d ? `Next puzzle in ${untilNext()}` : "Five shapes. One attempt each. A fresh set tomorrow."}</p></div>`;
+  <p class="small mute" data-next>Next puzzle in ${untilNext()}</p></div>`;
   app.scrollTop = 0;
   const mc = css("--mute");
   document

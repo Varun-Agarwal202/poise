@@ -29,7 +29,13 @@ let resetLabel = 0;
 let resetText = 0;
 
 /** Squares by grade: 90+, 70+, 45+, 20+, else. */
-const SQUARES = ["🟩", "🟨", "🟧", "🟫", "⬛"];
+const SQUARES = [
+  "\u{1f7e9}",
+  "\u{1f7e8}",
+  "\u{1f7e7}",
+  "\u{1f7eb}",
+  "\u{2b1b}",
+];
 
 /** Wordle-style text: title, total, one square per shape. */
 export function shareText(r: Rec) {
@@ -92,7 +98,8 @@ export async function copyResult(r: Rec) {
         captureFailure?: boolean;
         capturePending?: Promise<void>;
       };
-      if (hook.captureFailure) throw new Error("Image capture returned no data");
+      if (hook.captureFailure)
+        throw new Error("Image capture returned no data");
       if (hook.capturePending) await hook.capturePending;
       return paintShare(source);
     })();
@@ -166,16 +173,18 @@ export async function paintShare(source: HTMLElement): Promise<Blob> {
   const total =
     source.querySelector(".share-score .total b")?.textContent?.trim() || "";
   const site =
-    [...source.querySelectorAll(".share-foot > span")].pop()?.textContent?.trim() ||
-    "";
+    [...source.querySelectorAll(".share-foot > span")]
+      .pop()
+      ?.textContent?.trim() || "";
   const items = [...source.querySelectorAll(".result-object")].map((el) => ({
     n: el.querySelector(".object-number")?.textContent?.trim() || "",
     name:
       el.querySelector(".object-label span:not(.mute)")?.textContent?.trim() ||
       "",
     off: el.querySelector(".object-label .mute")?.textContent?.trim() || "",
-    pts: (el.querySelector(".object-score")?.childNodes[0]?.textContent || "")
-      .trim(),
+    pts: (
+      el.querySelector(".object-score")?.childNodes[0]?.textContent || ""
+    ).trim(),
     thumb: el.querySelector("canvas"),
   }));
 
@@ -185,7 +194,7 @@ export async function paintShare(source: HTMLElement): Promise<Blob> {
   const col = (inner - colGap * 4) / 5;
   const padTop = 40;
   const scoreTop = padTop + 28 + 28;
-  const scoreBottom = scoreTop + 80;
+  const scoreBottom = scoreTop + 100;
   const objectsTop = scoreBottom + 20 + 24;
   const objH = 22 + col + 10 + 40 + 10 + 22;
   const footTop = objectsTop + objH + 22;
@@ -209,8 +218,58 @@ export async function paintShare(source: HTMLElement): Promise<Blob> {
   drawText(ctx, date, CARD_W - padX, padTop + 20, 0, "right");
 
   ctx.fillStyle = ink;
-  ctx.font = `800 22px ${FACE}`;
-  drawText(ctx, tier, padX, scoreBottom - 10, -0.03);
+  ctx.font = `800 17px ${FACE}`;
+  const pillW = ctx.measureText(tier).width + 26;
+  ctx.beginPath();
+  ctx.roundRect(padX, scoreTop, pillW, 34, 17);
+  ctx.fill();
+  ctx.fillStyle = bg;
+  drawText(ctx, tier, padX + 13, scoreTop + 23, 0.055);
+  const curveX = padX;
+  const curveW = 220;
+  const curveBase = scoreBottom - 4;
+  const curveH = 46;
+  const curveY = (score: number) =>
+    curveBase - curveH * Math.exp(-0.5 * Math.pow((score - 225) / 85, 2));
+  ctx.beginPath();
+  for (let i = 0; i <= 50; i++) {
+    const score = i * 10;
+    const x = curveX + (score / 500) * curveW;
+    const y = curveY(score);
+    if (i) ctx.lineTo(x, y);
+    else ctx.moveTo(x, y);
+  }
+  ctx.lineTo(curveX + curveW, curveBase);
+  ctx.lineTo(curveX, curveBase);
+  ctx.closePath();
+  ctx.save();
+  ctx.globalAlpha = 0.09;
+  ctx.fillStyle = ink;
+  ctx.fill();
+  ctx.restore();
+  ctx.beginPath();
+  for (let i = 0; i <= 50; i++) {
+    const score = i * 10;
+    const x = curveX + (score / 500) * curveW;
+    const y = curveY(score);
+    if (i) ctx.lineTo(x, y);
+    else ctx.moveTo(x, y);
+  }
+  ctx.strokeStyle = mute;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  const numericTotal = Number(total) || 0;
+  const markerX = curveX + (numericTotal / 500) * curveW;
+  const markerY = curveY(numericTotal);
+  ctx.strokeStyle = ink;
+  ctx.beginPath();
+  ctx.moveTo(markerX, Math.max(scoreTop + 28, markerY - 8));
+  ctx.lineTo(markerX, curveBase);
+  ctx.stroke();
+  ctx.fillStyle = ink;
+  ctx.beginPath();
+  ctx.arc(markerX, markerY, 4, 0, Math.PI * 2);
+  ctx.fill();
   ctx.font = `600 14px ${FACE}`;
   const frac = "/ 500";
   const fracW = ctx.measureText(frac).width;

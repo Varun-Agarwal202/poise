@@ -39,14 +39,19 @@ export const GRADES: [number, string][] = [
   [0, "Way off"],
 ];
 export const gi = (p: number) => GRADES.findIndex((q) => p >= q[0]);
-const TIERS: [number, string][] = [
-  [460, "Plumb line"],
-  [400, "Steady hand"],
-  [320, "Good eye"],
-  [220, "Getting closer"],
-  [0, "Keep aiming"],
-];
-export const tierOf = (t: number) => TIERS.find((q) => t >= q[0])![1];
+/** Estimated score percentile until Poise has a shared, opt-in score distribution. */
+export function percentileOf(total: number) {
+  const z = (cl(total, 0, 500) - 225) / (85 * Math.SQRT2);
+  const a = 0.147;
+  const z2 = z * z;
+  const erf =
+    Math.sign(z) *
+    Math.sqrt(1 - Math.exp((-z2 * (4 / Math.PI + a * z2)) / (1 + a * z2)));
+  return cl(Math.round(50 * (1 + erf)), 1, 99);
+}
+export const topPercentOf = (total: number) =>
+  Math.max(1, 100 - percentileOf(total));
+export const rankOf = (total: number) => `Top ${topPercentOf(total)}%`;
 
 export const gdots = (pts: number[], lg = false) =>
   `<span class="dots${lg ? " lg" : ""}" role="img" aria-label="Grades: ${pts.map((p) => GRADES[gi(p)][1]).join(", ")}">${pts.map((p, i) => `<i class="g${gi(p)}${lg ? " pop" : ""}"${lg ? ` style="animation-delay:${0.85 + i * 0.07}s"` : ""}></i>`).join("")}</span>`;

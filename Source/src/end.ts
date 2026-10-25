@@ -1,6 +1,6 @@
-import { build, twistOf } from "./gen";
+import { build } from "./gen";
 import { thumb, stop, dpr } from "./stage";
-import { $, app, tierOf, setTitle } from "./dom";
+import { $, app, rankOf, setTitle } from "./dom";
 import { TODAY, noOf, fmtDate, untilNext, type Rec } from "./store";
 import { copyResult, copyText } from "./share";
 import { ui } from "./game";
@@ -22,29 +22,49 @@ function objects(rec: Rec, names: string[], dprX: number) {
     .join("");
 }
 
+function bellCurve(total: number) {
+  const left = 8,
+    width = 244,
+    base = 61,
+    height = 47,
+    y = (score: number) =>
+      base - height * Math.exp(-0.5 * Math.pow((score - 225) / 85, 2)),
+    pts = Array.from({ length: 51 }, (_, i) => {
+      const score = i * 10;
+      return [left + (score / 500) * width, y(score)];
+    }),
+    line = pts
+      .map(([x, py], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${py.toFixed(1)}`)
+      .join(" "),
+    area = `${line} L${left + width} ${base} L${left} ${base} Z`,
+    markerX = left + (Math.max(0, Math.min(500, total)) / 500) * width,
+    markerY = y(total);
+  return `<svg class="rank-curve" viewBox="0 0 260 68" role="img" aria-label="Your score marked on the score distribution"><path class="rank-area" d="${area}"/><path class="rank-line" d="${line}"/><line class="rank-marker" x1="${markerX.toFixed(1)}" y1="${Math.max(7, markerY - 8).toFixed(1)}" x2="${markerX.toFixed(1)}" y2="61"/><circle class="rank-dot" cx="${markerX.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4"/></svg>`;
+}
+
 export function end(rec: Rec, isNew: boolean) {
   stop();
   ui.ph = "end";
   app.className = "result-screen";
   const rs = build(rec.seed, rec.fams),
-    tw = twistOf(rec.seed),
-    names = rs.map((s) => s.name);
+    names = rs.map((s) => s.name),
+    rank = rankOf(rec.tot);
   app.innerHTML = `<section id="result-sheet" aria-label="Your results">
     <header class="receipt-heading site-header"><span class="wordmark">Poise</span><div data-copy-exclude>${navBtns()}</div></header>
-    <div class="result-summary"><div><p class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</p><h1 id="eh" tabindex="-1">${tierOf(rec.tot)}</h1><p class="mute small">${tw?.name ?? "Classic"}${isNew ? " · Personal best" : ""}</p></div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
+    <div class="result-summary"><div class="rank-summary"><p class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</p><h1 class="rank-pill" id="eh" tabindex="-1">${rank}</h1>${bellCurve(rec.tot)}${isNew ? '<p class="mute small">Personal best</p>' : ""}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
     <div class="result-objects">${objects(rec, names, dpr)}</div>
     <div class="receipt-footer"><span class="pin-key"><i class="key-player"></i>Your pin <i class="key-target"></i>Balance point</span></div>
   </section>
   <div id="share-card" class="share-card" aria-hidden="true">
     <div class="share-top"><span class="wordmark">Poise</span><span class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</span></div>
-    <div class="share-score"><p class="share-tier">${tierOf(rec.tot)}${isNew ? " · Personal best" : ""}</p><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
+    <div class="share-score"><div class="share-rank"><p class="share-tier rank-pill">${rank}${isNew ? " · Personal best" : ""}</p>${bellCurve(rec.tot)}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
     <div class="result-objects">${objects(rec, names, 2)}</div>
     <div class="share-foot"><span class="pin-key"><i class="key-player"></i>Your pin <i class="key-target"></i>Balance point</span><span>${siteHost}</span></div>
   </div>
   <div class="result-actions"><div class="copy-pair"><button class="btn" id="copy-result" aria-describedby="copy-description">Copy image</button><button class="text-btn" id="copy-text" aria-describedby="copy-text-description">Copy text</button></div><span id="copy-description" class="vh">Copy these results as an image.</span><span id="copy-text-description" class="vh">Copy these results as text.</span><p class="mute small"${rec.d === TODAY ? " data-next" : ""}>${rec.d === TODAY ? "Next puzzle in " + untilNext() : "Result saved on this device."}</p></div>
   <p class="small mute" id="copy-status" role="status"></p>`;
   app.scrollTop = 0;
-  setTitle(`${rec.tot}/500 · ${tierOf(rec.tot)}`);
+  setTitle(`${rec.tot}/500 · ${rank}`);
   for (const root of ["#result-sheet", "#share-card"])
     document
       .querySelectorAll<HTMLCanvasElement>(`${root} .result-object canvas`)

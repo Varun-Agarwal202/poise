@@ -1,22 +1,13 @@
 import { BOXM, PERFECT_CM, type Shape } from "./gen";
 import type { Geo, Pt } from "./stage";
 
-/** Rigid body about a fixed pin. Gravity supplies torque; viscous damping
- * dissipates motion. There is no spring pulling toward the original pose.
- * With screen y pointing down, alpha = g*d*cos(a0+th)/(k²+d²).
- * Exact equilibria stay still, including the unstable inverted equilibrium.
- *
- * Departures from pure physics, for the sake of play:
- * - The pin has grip. A pure pendulum turns until its center hangs below the
- *   pin no matter how small the miss, so a 0.4 cm miss and a 6 cm miss both
- *   rotate 90°. Here the rotation is scaled by tilt(dm): a pin that scores 100
- *   holds still, a near miss tips a few degrees, a wide miss swings fully.
- *   The timing and wobble of the motion are still the pendulum's.
- * - Swing speed never drops below W_MIN. Physically, a near-center pin would
- *   drift for several seconds; here every drop resolves at a similar pace.
- */
+/** Distance-driven rotational feedback around a fixed pin.
+ * Shape inertia still affects the pace, but a narrow frequency range keeps
+ * equally accurate guesses feeling consistent. Viscous damping gives the
+ * object one readable overshoot before it settles. */
 export interface Swing {
-  a0: number;
+  /** Unscaled resting angle, signed so mirrored placements fall opposite ways. */
+  target: number;
   w2: number;
   /** Fraction of the full pendulum rotation this pin allows, 0..1. */
   amp: number;
@@ -32,12 +23,15 @@ export interface Swing {
   fast: number;
   wait: number;
 }
-/** Damping ratio. Low enough that the object visibly overshoots and wobbles two or three times before settling. */
-const ZETA = 0.32;
-/** Simulation runs this much faster than wall-clock time. */
-const TEMPO = 1.25;
-/** Minimum angular frequency, rad/s (a period of about 1.25 s). */
-const W_MIN = 5;
+/** Damping ratio: one soft overshoot rather than several fast oscillations. */
+export const ZETA = 0.46;
+/** Simulation speed relative to wall-clock time. */
+export const TEMPO = 1;
+/** Angular-frequency limits keep different shapes close in presentation speed. */
+export const W_MIN = 4.1;
+export const W_MAX = 5.4;
+/** A visible miss should never flash through before the player can read it. */
+export const MIN_WOBBLE_TIME = 0.8;
 export const SEAT = 0.2;
 /** How much of the pendulum's full rotation a miss of dm metres produces.
  * 0 inside the 100-point zone, then (in degrees of a sideways miss)
@@ -56,9 +50,11 @@ export function swing(R: Shape, g: Geo, P: Pt, wait = SEAT) {
   const inertia = R.k2 * BOXM * BOXM + dm * dm;
   const amp = tilt(dm);
   const held = amp <= 0 || inertia <= 0;
+  const direction = Math.abs(dx) > 1e-6 ? Math.sign(dx) : dy >= 0 ? 1 : -1;
+  const natural = (R.gv * dm) / inertia;
   const ps: Swing = {
-    a0: Math.atan2(dy, dx),
-    w2: held ? 0 : Math.max((R.gv * dm) / inertia, W_MIN * W_MIN),
+    target: direction * (Math.PI / 2),
+    w2: held ? 0 : Math.min(Math.max(natural, W_MIN * W_MIN), W_MAX * W_MAX),
     amp,
     u: 0,
     th: 0,
@@ -79,19 +75,19 @@ export function step(p: Swing, dt: number) {
   while (p.acc + 1e-12 >= h) {
     p.acc = Math.max(0, p.acc - h);
     p.t += h;
-    const pull = Math.cos(p.a0 + p.u);
-    // Avoid numerical drift in a mathematically exact vertical equilibrium.
-    const torque = Math.abs(pull) < 1e-12 ? 0 : p.w2 * pull;
     const e = seated(p),
-      net = torque * e * e;
+      goal = p.target * e * e,
+      net = p.w2 * (goal - p.u);
     const damping = 2 * ZETA * Math.sqrt(p.w2);
     p.om += (net - (p.fast ? Math.max(damping, 9) : damping) * p.om) * h;
     p.u += p.om * h;
     p.th = p.u * p.amp;
     p.peak = Math.max(p.peak, Math.abs(p.th));
     // Calm is judged on the visible motion, so a slight tilt resolves sooner than a full swing.
+    const readableUntil =
+      p.amp > 0 ? Math.max(p.wait, MIN_WOBBLE_TIME) : p.wait;
     if (
-      p.t > p.wait &&
+      p.t > readableUntil &&
       Math.abs(p.om) * p.amp < 0.22 &&
       Math.abs(net) * p.amp < 0.22
     )

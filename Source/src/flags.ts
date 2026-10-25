@@ -1,6 +1,4 @@
-import { posthog } from "./analytics";
-
-// Override per browser with ?ff=name or ?ff=-name (persisted). PostHog flags named `poise-<name>` win over defaults.
+// Override per browser with ?ff=name or ?ff=-name (persisted).
 const DEFAULTS = { coach: true, challenge: true, archive: true };
 export type Flag = keyof typeof DEFAULTS;
 
@@ -23,7 +21,5 @@ if (qs) {
 }
 
 export function flag(n: Flag): boolean {
-  if (n in local) return !!local[n];
-  const v = posthog()?.getFeatureFlag("poise-" + n);
-  return v === undefined ? DEFAULTS[n] : !!v;
+  return n in local ? !!local[n] : DEFAULTS[n];
 }

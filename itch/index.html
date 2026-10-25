@@ -5,18 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Poise: the daily balancing game</title>
 <meta name="description" content="Five shapes a day. Place the pin where each one balances.">
-<meta http-equiv="refresh" content="0;url=https://poisedaily.com/">
-<script>
-(function () {
-  var url = "https://poisedaily.com/";
-  try { window.top.location.replace(url); } catch (e) {}
-  location.replace(url);
-})();
-</script>
 <style>
-  :root { color-scheme: light dark; --bg: #eceef2; --ink: #171a21; --line: #cdd2db; }
+  :root { color-scheme: light dark; --bg: #eceef2; --ink: #171a21; }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #16181d; --ink: #f1f3f7; --line: #323743; }
+    :root { --bg: #16181d; --ink: #f1f3f7; }
   }
   html, body { height: 100%; margin: 0; }
   body {
@@ -45,7 +37,7 @@
   <main>
     <h1>Poise</h1>
     <p>Pin each shape at its balance point.</p>
-    <a href="https://poisedaily.com/" target="_top" rel="noopener">Play today’s game</a>
+    <a id="play" href="https://poisedaily.com/" target="_blank" rel="noopener">Play today’s game</a>
   </main>
 </body>
 </html>

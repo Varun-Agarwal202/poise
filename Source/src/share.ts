@@ -40,10 +40,11 @@ const SQUARES = [
 /** Wordle-style text: title, total, one square per shape. */
 export function shareText(r: Rec) {
   const site = (
-    (import.meta.env.VITE_SITE_URL as string | undefined) || ""
+    (import.meta.env.VITE_SITE_URL as string | undefined) ||
+    "https://poisedaily.com"
   ).replace(/\/$/, "");
   const lines = [
-    `Poise No. ${noOf(r.d)}  ${r.tot}/500`,
+    `Pinpoise No. ${noOf(r.d)}  ${r.tot}/500`,
     r.pts.map((p) => SQUARES[gi(p)]).join(""),
   ];
   if (site) lines.push(site);
@@ -83,7 +84,7 @@ export async function copyResult(r: Rec) {
   status.textContent = "";
   if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
     status.textContent =
-      "This browser can’t copy images. Use Copy text, or open Poise in Safari, Chrome or Edge.";
+      "This browser can’t copy images. Use Copy text, or open Pinpoise in Safari, Chrome or Edge.";
     return;
   }
   button.disabled = true;
@@ -166,7 +167,7 @@ export async function paintShare(source: HTMLElement): Promise<Blob> {
   const mute = css("--mute") || "#5f6674";
   const line = css("--line") || "#cdd2db";
   const wordmark =
-    source.querySelector(".wordmark")?.textContent?.trim() || "Poise";
+    source.querySelector(".wordmark")?.textContent?.trim() || "Pinpoise";
   const date =
     source.querySelector(".share-top .mute")?.textContent?.trim() || "";
   const tier = source.querySelector(".share-tier")?.textContent?.trim() || "";

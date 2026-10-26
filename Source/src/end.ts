@@ -50,13 +50,13 @@ export function end(rec: Rec, isNew: boolean) {
     names = rs.map((s) => s.name),
     rank = rankOf(rec.tot);
   app.innerHTML = `<section id="result-sheet" aria-label="Your results">
-    <header class="receipt-heading site-header"><span class="wordmark">Poise</span><div data-copy-exclude>${navBtns()}</div></header>
+    <header class="receipt-heading site-header"><span class="wordmark">Pinpoise</span><div data-copy-exclude>${navBtns()}</div></header>
     <div class="result-summary"><div class="rank-summary"><p class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</p><h1 class="rank-pill" id="eh" tabindex="-1">${rank}</h1>${bellCurve(rec.tot)}${isNew ? '<p class="mute small">Personal best</p>' : ""}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
     <div class="result-objects">${objects(rec, names, dpr)}</div>
     <div class="receipt-footer"><span class="pin-key"><i class="key-player"></i>Your pin <i class="key-target"></i>Balance point</span></div>
   </section>
   <div id="share-card" class="share-card" aria-hidden="true">
-    <div class="share-top"><span class="wordmark">Poise</span><span class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</span></div>
+    <div class="share-top"><span class="wordmark">Pinpoise</span><span class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</span></div>
     <div class="share-score"><div class="share-rank"><p class="share-tier rank-pill">${rank}${isNew ? " · Personal best" : ""}</p>${bellCurve(rec.tot)}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
     <div class="result-objects">${objects(rec, names, 2)}</div>
     <div class="share-foot"><span class="pin-key"><i class="key-player"></i>Your pin <i class="key-target"></i>Balance point</span><span>${siteHost}</span></div>

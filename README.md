@@ -1,4 +1,4 @@
-# Poise
+# Pinpoise
 
 ## Play on your Mac
 

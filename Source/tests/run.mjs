@@ -511,7 +511,7 @@ assert.equal(
 );
 assert.equal(e.w.document.querySelectorAll(".result-actions button").length, 2);
 const text = e.api.sharing.shareText(rec);
-assert(text.startsWith(`Poise No. ${e.api.store.noOf(rec.d)}`));
+assert(text.startsWith(`Pinpoise No. ${e.api.store.noOf(rec.d)}`));
 assert(text.includes(`${rec.tot}/500`));
 assert(/^[🟩🟨🟧🟫⬛]{5}$/u.test(text.split("\n")[1]));
 assert(e.w.document.querySelector("#share-card"));

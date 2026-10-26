@@ -25,7 +25,7 @@ export function say(msg: string) {
   }, 60);
 }
 export const setTitle = (s: string) => {
-  document.title = s ? `${s} · Poise` : "Poise: the daily balancing game";
+  document.title = s ? `${s} · Pinpoise` : "Pinpoise: Find the Balance Point";
 };
 export const eob = (u: number) =>
   1 + 2.7 * Math.pow(u - 1, 3) + 1.7 * Math.pow(u - 1, 2);
@@ -39,7 +39,7 @@ export const GRADES: [number, string][] = [
   [0, "Way off"],
 ];
 export const gi = (p: number) => GRADES.findIndex((q) => p >= q[0]);
-/** Estimated score percentile until Poise has a shared, opt-in score distribution. */
+/** Estimated score percentile until Pinpoise has a shared, opt-in score distribution. */
 export function percentileOf(total: number) {
   const z = (cl(total, 0, 500) - 225) / (85 * Math.SQRT2);
   const a = 0.147;

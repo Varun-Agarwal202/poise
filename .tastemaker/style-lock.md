@@ -1,8 +1,8 @@
-# Poise style lock
+# Pinpoise style lock
 
 ## North star
 
-Poise should feel like a quiet, self-explanatory daily balancing game.
+Pinpoise should feel like a quiet, self-explanatory daily balancing game.
 
 ## Visual system
 
@@ -14,7 +14,7 @@ Poise should feel like a quiet, self-explanatory daily balancing game.
 
 ## Palette
 
-Restored from the original Poise palette after the warm direction was rejected.
+Restored from the original palette after the warm direction was rejected.
 
 ### Light
 
@@ -43,11 +43,12 @@ Restored from the original Poise palette after the warm direction was rejected.
 
 ## Signature details
 
-- Logo: the existing tilted balance bar and pin mark. Search favicon uses a stable 48px PNG export of the same artwork.
+- Brand: Pinpoise is the trial name across the game, search metadata, installed-app labels, and shared results. The current domain remains poisedaily.com during the trial.
+- Logo: the existing tilted balance bar and pin mark. Search favicon uses a stable 96px PNG export of the same artwork.
 - Neutral player pin and balance target.
 - A plain framed play area keeps attention on the object.
 - Daily set strip and results sheet use rules and numbering like a printed test record.
-- Mixed-material objects use a shared density scale so relative weight is visible before the player aims.
+- Mixed-material objects use a framed, material-colored density scale with relative multipliers so weight differences are obvious before the player aims.
 - Main actions use squared instrument controls, not generic pill buttons.
 
 ## Guardrails

@@ -1,4 +1,4 @@
-# Poise
+# Pinpoise
 
 A daily balancing game. Five objects, one attempt per object, a new seeded collection each day. Archive, Stats and Settings are retained; practice is removed.
 

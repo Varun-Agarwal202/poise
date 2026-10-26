@@ -191,15 +191,23 @@ function matsOf(R: Shape) {
 
 function legend(R: Shape) {
   const u = matsOf(R);
-  const maxDensity = Math.max(...u.map((t) => MAT[t][1]));
+  const densities = u.map((t) => MAT[t][1]);
+  const minDensity = Math.min(...densities);
+  const maxDensity = Math.max(...densities);
   const items = u
     .map((t) => {
       const name = t[0].toUpperCase() + t.slice(1);
-      const width = Math.max(10, (MAT[t][1] / maxDensity) * 100);
-      return `<span class="lg-item" role="listitem" aria-label="${name}, density ${MAT[t][1]} grams per cubic centimetre"><span class="lg-name"><i class="lg-swatch" style="background:${MAT[t][0] || R.a}"></i><b>${name}</b><em>${MAT[t][1]} g/cm³</em></span><span class="lg-track" aria-hidden="true"><i style="width:${width}%"></i></span></span>`;
+      const density = MAT[t][1];
+      const ratio = density / minDensity;
+      const ratioText = (
+        ratio < 10 ? ratio.toFixed(1) : ratio.toFixed(0)
+      ).replace(".0", "");
+      const width = Math.max(12, (density / maxDensity) * 100);
+      const color = MAT[t][0] || R.a;
+      return `<span class="lg-item" role="listitem" style="--material:${color}" aria-label="${name}, ${ratioText} times the lightest material, density ${density} grams per cubic centimetre"><span class="lg-name"><i class="lg-swatch"></i><b>${name}</b><em>${ratioText}×</em></span><span class="lg-track" aria-hidden="true"><i style="width:${width}%"></i></span><small class="lg-density">${density} g/cm³</small></span>`;
     })
     .join("");
-  return `<div class="lg-wrap"><div class="lg-title"><b>Density</b><span>Heavier material pulls more</span></div><div class="lg" role="list" aria-label="Material density, lightest first">${items}</div></div>`;
+  return `<div class="lg-wrap"><div class="lg-title"><b>Density</b><span>More density. More pull.</span></div><div class="lg" role="list" aria-label="Material density, lightest first">${items}</div></div>`;
 }
 const dots = (g: Game) =>
   `<span class="dots" role="img" aria-label="Shape ${Math.min(g.r + 1, RN)} of ${RN}">${[...Array(RN)].map((_, i) => `<i class="${i < g.res.length ? "g" + gi(g.res[i].pts) : i === g.r ? "cur" : ""}"></i>`).join("")}</span>`;
@@ -232,7 +240,7 @@ function round() {
     : matchMedia("(pointer:coarse)").matches
       ? TAP_HINT
       : DRAG_HINT;
-  app.innerHTML = `<header class="site-header"><span class="wordmark">Poise</span>${navBtns()}</header>
+  app.innerHTML = `<header class="site-header"><span class="wordmark">Pinpoise</span>${navBtns()}</header>
   <div class="round-header"><span class="mute">No. ${noOf(g.d)} / Object ${g.r + 1} of ${RN}</span>${dots(g)}<span><b id="sc">${total(g)}</b><span class="mute"> / 500</span></span></div>
   <div id="stage"><canvas id="cv"></canvas></div><div class="foot fx" id="ft"><div class="object-heading"><h1 class="lede">${R.name}</h1>${legend(R)}</div><p class="small rule">Aim for the center of mass. It can lie in a gap.</p><span class="mute small" id="hint">${hint}</span><button class="btn" id="dp" disabled>Drop pin</button></div>`;
   app.scrollTop = 0;

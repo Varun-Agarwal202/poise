@@ -1,7 +1,7 @@
 {
-  "name": "Poise: the daily balancing game",
-  "short_name": "Poise",
-  "description": "Five shapes a day. Pin each one at its balance point.",
+  "name": "Pinpoise",
+  "short_name": "Pinpoise",
+  "description": "Five new shapes every day. Find each balance point and compare your score.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

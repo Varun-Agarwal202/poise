@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "assets:og": "node scripts/generate-og.mjs",
     "dev": "vite --host 127.0.0.1 --port 5174",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

@@ -43,9 +43,11 @@ Restored from the original Poise palette after the warm direction was rejected.
 
 ## Signature details
 
+- Logo: the existing tilted balance bar and pin mark. Search favicon uses a stable 48px PNG export of the same artwork.
 - Neutral player pin and balance target.
 - A plain framed play area keeps attention on the object.
 - Daily set strip and results sheet use rules and numbering like a printed test record.
+- Mixed-material objects use a shared density scale so relative weight is visible before the player aims.
 - Main actions use squared instrument controls, not generic pill buttons.
 
 ## Guardrails

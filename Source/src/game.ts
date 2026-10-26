@@ -191,21 +191,15 @@ function matsOf(R: Shape) {
 
 function legend(R: Shape) {
   const u = matsOf(R);
+  const maxDensity = Math.max(...u.map((t) => MAT[t][1]));
   const items = u
-    .map((t, i) => {
-      const tag =
-        u.length > 1 && i === 0
-          ? "light"
-          : u.length > 1 && i === u.length - 1
-            ? "heavy"
-            : "";
+    .map((t) => {
       const name = t[0].toUpperCase() + t.slice(1);
-      return `<span class="lg-item"><i style="background:${MAT[t][0] || R.a}"></i><b>${name}</b><em>${MAT[t][1]}${tag ? " · " + tag : ""}</em></span>`;
+      const width = Math.max(10, (MAT[t][1] / maxDensity) * 100);
+      return `<span class="lg-item" role="listitem" aria-label="${name}, density ${MAT[t][1]} grams per cubic centimetre"><span class="lg-name"><i class="lg-swatch" style="background:${MAT[t][0] || R.a}"></i><b>${name}</b><em>${MAT[t][1]} g/cm³</em></span><span class="lg-track" aria-hidden="true"><i style="width:${width}%"></i></span></span>`;
     })
     .join("");
-  return `<div class="lg" aria-label="Materials, lightest first: ${u
-    .map((t) => `${t} ${MAT[t][1]} grams per cubic centimetre`)
-    .join(", ")}">${items}<span class="lg-unit">g/cm³</span></div>`;
+  return `<div class="lg-wrap"><div class="lg-title"><b>Density</b><span>Heavier material pulls more</span></div><div class="lg" role="list" aria-label="Material density, lightest first">${items}</div></div>`;
 }
 const dots = (g: Game) =>
   `<span class="dots" role="img" aria-label="Shape ${Math.min(g.r + 1, RN)} of ${RN}">${[...Array(RN)].map((_, i) => `<i class="${i < g.res.length ? "g" + gi(g.res[i].pts) : i === g.r ? "cur" : ""}"></i>`).join("")}</span>`;

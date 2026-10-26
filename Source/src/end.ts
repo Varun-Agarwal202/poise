@@ -1,6 +1,6 @@
 import { build } from "./gen";
 import { thumb, stop, dpr } from "./stage";
-import { $, app, rankOf, setTitle } from "./dom";
+import { $, app, rankOf, SCORE_CENTER, SCORE_SPREAD, setTitle } from "./dom";
 import { TODAY, noOf, fmtDate, untilNext, type Rec } from "./store";
 import { copyResult, copyText } from "./share";
 import { ui } from "./game";
@@ -28,7 +28,9 @@ function bellCurve(total: number) {
     base = 61,
     height = 47,
     y = (score: number) =>
-      base - height * Math.exp(-0.5 * Math.pow((score - 225) / 85, 2)),
+      base -
+      height *
+        Math.exp(-0.5 * Math.pow((score - SCORE_CENTER) / SCORE_SPREAD, 2)),
     pts = Array.from({ length: 51 }, (_, i) => {
       const score = i * 10;
       return [left + (score / 500) * width, y(score)];

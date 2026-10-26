@@ -4,7 +4,7 @@ import { createCanvas } from "@napi-rs/canvas";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share';`;
+const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom';`;
 const compiled = await bundle({
   stdin: { contents: entry, resolveDir: process.cwd(), loader: "ts" },
   bundle: true,
@@ -136,6 +136,9 @@ function ok(label) {
 }
 const e = env(),
   { gen, legacy, store } = e.api;
+assert.equal(e.api.dom.rankOf(408), "Top 5%");
+assert.equal(e.api.dom.rankOf(225), "Top 50%");
+ok("Rank curve stays conservative at high scores");
 for (let n = 0; n < 3; n++) {
   const d = store.dateOfNo(n + 1),
     p = store.puzzleOf(d);

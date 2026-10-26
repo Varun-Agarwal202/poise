@@ -39,9 +39,12 @@ export const GRADES: [number, string][] = [
   [0, "Way off"],
 ];
 export const gi = (p: number) => GRADES.findIndex((q) => p >= q[0]);
-/** Estimated score percentile until Pinpoise has a shared, opt-in score distribution. */
+/** Shared estimated score distribution used by the rank label and both curve renders. */
+export const SCORE_CENTER = 225;
+export const SCORE_SPREAD = 110;
+
 export function percentileOf(total: number) {
-  const z = (cl(total, 0, 500) - 225) / (85 * Math.SQRT2);
+  const z = (cl(total, 0, 500) - SCORE_CENTER) / (SCORE_SPREAD * Math.SQRT2);
   const a = 0.147;
   const z2 = z * z;
   const erf =

@@ -48,7 +48,7 @@ Restored from the original palette after the warm direction was rejected.
 - Neutral player pin and balance target.
 - A plain framed play area keeps attention on the object.
 - Daily set strip and results sheet use rules and numbering like a printed test record.
-- Mixed-material objects use a framed, material-colored density scale with relative multipliers so weight differences are obvious before the player aims.
+- Mixed-material objects show density through prominent values, material-colored bars, and relative multipliers.
 - Main actions use squared instrument controls, not generic pill buttons.
 
 ## Guardrails
@@ -56,7 +56,9 @@ Restored from the original palette after the warm direction was rejected.
 - No gradients, glass effects, floating cards, decorative blobs, or emoji icons.
 - No em dashes in shipped copy.
 - No decorative process labels or interface copy that explains the visual treatment.
+- Density differences must be shown visually, never explained with a slogan.
 - Result language should report a useful number, not offer vague encouragement.
+- Score ranks use a broad, conservative curve so strong scores do not overclaim rarity.
 - Do not expose generated-sounding daily modifier names.
 - Do not add motion that competes with the wobble physics.
 - Keep the object canvas visually dominant.

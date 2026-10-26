@@ -497,21 +497,12 @@ canvas {
   background: color-mix(in srgb, var(--card) 46%, transparent);
 }
 .lg-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 .lg-title b {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-.lg-title span {
-  color: var(--ink);
-  font-size: 0.8125rem;
-  font-weight: 700;
 }
 .lg {
   display: grid;
@@ -548,7 +539,7 @@ canvas {
 }
 .lg-item em {
   color: var(--ink);
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 800;
   font-style: normal;
   font-variant-numeric: tabular-nums;
@@ -557,8 +548,9 @@ canvas {
 }
 .lg-density {
   align-self: flex-end;
-  color: var(--mute);
-  font-size: 0.6875rem;
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }

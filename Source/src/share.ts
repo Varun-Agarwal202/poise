@@ -1,6 +1,6 @@
 import { track } from "./analytics";
 import { flag } from "./flags";
-import { copy, css, gi, say } from "./dom";
+import { copy, css, gi, say, SCORE_CENTER, SCORE_SPREAD } from "./dom";
 import { TODAY, dnOf, noOf, dateOfNo, type Rec } from "./store";
 
 /** A friend's result, decoded from a `#vs=<puzzleNo>.<p1>.<p2>.<p3>.<p4>.<p5>` link. Contains scores only, never pin positions. */
@@ -231,7 +231,9 @@ export async function paintShare(source: HTMLElement): Promise<Blob> {
   const curveBase = scoreBottom - 4;
   const curveH = 46;
   const curveY = (score: number) =>
-    curveBase - curveH * Math.exp(-0.5 * Math.pow((score - 225) / 85, 2));
+    curveBase -
+    curveH *
+      Math.exp(-0.5 * Math.pow((score - SCORE_CENTER) / SCORE_SPREAD, 2));
   ctx.beginPath();
   for (let i = 0; i <= 50; i++) {
     const score = i * 10;

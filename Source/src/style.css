@@ -1064,7 +1064,7 @@ dialog::backdrop {
   padding: 10px 16px;
   border: 1.5px solid var(--ink);
   border-radius: var(--r-control);
-  background: var(--surface);
+  background: var(--card);
   color: var(--ink);
   font-weight: 800;
 }
@@ -1105,7 +1105,7 @@ dialog::backdrop {
   font-weight: 800;
 }
 .auth-modes button[aria-pressed="true"] {
-  background: var(--surface);
+  background: var(--card);
   color: var(--ink);
   box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 14%, transparent);
 }
@@ -1519,6 +1519,61 @@ dialog::backdrop {
   height: 44px;
 }
 @media (max-width: 639px) {
+  #app {
+    --pad: 16px;
+  }
+  .play-screen {
+    gap: 10px;
+  }
+  .play-screen .foot {
+    gap: 8px;
+  }
+  .object-heading {
+    gap: 8px;
+  }
+  .lede {
+    font-size: 1.45rem;
+  }
+  .lg-wrap {
+    padding: 10px;
+  }
+  .lg-title {
+    margin-bottom: 8px;
+  }
+  .lg-title b {
+    font-size: 0.75rem;
+  }
+  .lg {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+  }
+  .lg-item {
+    gap: 4px;
+  }
+  .lg-name {
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+  .lg-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+  }
+  .lg-item b {
+    font-size: 0.78rem;
+  }
+  .lg-item em {
+    font-size: 1rem;
+  }
+  .lg-track {
+    height: 5px;
+  }
+  .lg-density {
+    font-size: 0.68rem;
+  }
+  .lg-unit {
+    display: none;
+  }
   /* An explicit Desktop choice still fits a phone; the daily action spans both columns. */
   :root[data-home-layout="desktop"] #app.home-screen {
     grid-template-areas: "header header" "intro stage" "caption caption" "foot foot";

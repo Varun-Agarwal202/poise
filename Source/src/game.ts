@@ -204,7 +204,7 @@ function legend(R: Shape) {
       ).replace(".0", "");
       const width = Math.max(12, (density / maxDensity) * 100);
       const color = MAT[t][0] || R.a;
-      return `<span class="lg-item" role="listitem" style="--material:${color}" aria-label="${name}, ${ratioText} times the lightest material, density ${density} grams per cubic centimetre"><span class="lg-name"><i class="lg-swatch"></i><b>${name}</b><em>${density}</em></span><span class="lg-track" aria-hidden="true"><i style="width:${width}%"></i></span><small class="lg-density">g/cm³ · ${ratioText}×</small></span>`;
+      return `<span class="lg-item" role="listitem" style="--material:${color}" aria-label="${name}, ${ratioText} times the lightest material, density ${density} grams per cubic centimetre"><span class="lg-name"><i class="lg-swatch"></i><b>${name}</b><em>${density}</em></span><span class="lg-track" aria-hidden="true"><i style="width:${width}%"></i></span><small class="lg-density"><span class="lg-unit">g/cm³ · </span>${ratioText}×</small></span>`;
     })
     .join("");
   return `<div class="lg-wrap"><div class="lg-title"><b>Density</b></div><div class="lg" role="list" aria-label="Material density, lightest first">${items}</div></div>`;

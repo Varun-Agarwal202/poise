@@ -81,3 +81,4 @@ Restored from the original palette after the warm direction was rejected.
 - Keep all 5 silhouettes mathematically unique and use 5 distinct material layouts per day.
 - Separate wood, plastic and gold clearly: dark brown wood, blue plastic and brighter warm gold.
 - On desktop, give the density panel stronger hierarchy through scale, spacing, contrast and larger values. Keep the phone version compact.
+- On phones, keep density visible but compress it into a 2-column instrument strip with smaller swatches, thinner bars and ratio-only sublabels.

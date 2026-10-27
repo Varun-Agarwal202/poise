@@ -62,7 +62,7 @@ Restored from the original palette after the warm direction was rejected.
 - Round results explicitly distinguish This shape from the cumulative Total.
 - Accuracy labels use narrower point bands so they follow the steep score curve.
 - Keep collecting anonymous score distributions, but do not display live player percentiles until the switch is explicitly enabled.
-- Use the strict fixed Top X% reference curve without claiming it represents today's players.
+- Use a balanced fixed Top X% reference curve without claiming it represents today's players.
 - Optional accounts belong inside a quiet personal sheet and must never block the daily game.
 - Do not expose generated-sounding daily modifier names.
 - Do not add motion that competes with the wobble physics.
@@ -82,3 +82,11 @@ Restored from the original palette after the warm direction was rejected.
 - Separate wood, plastic and gold clearly: dark brown wood, blue plastic and brighter warm gold.
 - On desktop, give the density panel stronger hierarchy through scale, spacing, contrast and larger values. Keep the phone version compact.
 - On phones, keep density visible but compress it into a 2-column instrument strip with smaller swatches, thinner bars and ratio-only sublabels.
+
+## 2026-10-27 shape direction
+
+- The daily silhouettes are the product's first priority. Visual novelty outranks catalogue size.
+- Use five different construction families per day, not five variations of a shared tiled contour system.
+- Favor recognizable but strange objects and assemblies such as molecules, twigs, tools, animals, hollow forms and welded hybrids.
+- Preserve each family's character with near-upright rotations and meaningful material placement.
+- Keep material colors distinct without making them loud: earthy wood, ocean-blue plastic, cool glass and metal, warm brass and gold.

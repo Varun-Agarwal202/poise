@@ -9,19 +9,19 @@ export interface RankData {
 const PLAYER_KEY = "pinpoise:player";
 export const REAL_RANK_MINIMUM = 20;
 export const USE_LIVE_RANKS = false;
-const FALLBACK_CENTER = 375;
+const FALLBACK_CENTER = 350;
 const FALLBACK_SPREAD = 70;
 const TOP_PERCENT_ANCHORS: [score: number, top: number][] = [
   [0, 99],
-  [250, 95],
-  [300, 85],
-  [350, 65],
-  [375, 50],
-  [400, 35],
-  [425, 23],
-  [450, 13],
-  [475, 6],
-  [490, 3],
+  [250, 92],
+  [300, 76],
+  [350, 50],
+  [375, 36],
+  [400, 24],
+  [425, 16],
+  [450, 9],
+  [475, 4],
+  [490, 2],
   [500, 1],
 ];
 

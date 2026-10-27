@@ -67,16 +67,16 @@ export const G0 = 9.81,
   EXT = 0.3,
   BOXM = EXT / 0.78;
 export const MAT: Record<string, [string | null, number]> = {
-  cork: ["#d4c29e", 0.25],
-  wood: ["#855f43", 0.6],
-  rubber: ["#788172", 1.1],
-  plastic: ["#4c74c9", 1.2],
-  ceramic: ["#c8c1b5", 2.3],
-  glass: ["#94bac1", 2.5],
-  aluminum: ["#adb8bd", 2.7],
-  steel: ["#90999e", 7.8],
-  brass: ["#b28b4e", 8.5],
-  gold: ["#d5a62b", 19.3],
+  cork: ["#c9b58d", 0.25],
+  wood: ["#7f5740", 0.6],
+  rubber: ["#5f6d63", 1.1],
+  plastic: ["#3f86a8", 1.2],
+  ceramic: ["#d2c6b8", 2.3],
+  glass: ["#8dbbc2", 2.5],
+  aluminum: ["#aab5ba", 2.7],
+  steel: ["#7f8b92", 7.8],
+  brass: ["#aa8047", 8.5],
+  gold: ["#e0ad32", 19.3],
 };
 const WORDS = [
   "PLANK",
@@ -750,7 +750,7 @@ export const famsFor2 = (n: number) => {
 /** v2 seeds look like `p2|<base>|<twist id>`, so a saved result can always be rebuilt exactly. */
 export const twistOf = (seed: string) => {
   const [v, , t] = seed.split("|");
-  return v === "p2" || v === "p3" || v === "p4" || v === "p5"
+  return v === "p2" || v === "p3" || v === "p4" || v === "p5" || v === "p6"
     ? (TW[t] ?? TW.classic)
     : null;
 };
@@ -861,6 +861,60 @@ export function mk(
       fl: false,
       parts: formPartsV5(index, material),
       name: formName(index),
+    };
+  }
+  if (seed.startsWith("p6|")) {
+    const index = formIndex(fam);
+    if (index < 0) throw new Error("Unknown daily silhouette");
+    const day = Math.floor(index / 5),
+      slot = index % 5,
+      family = famsFor3(day)[slot],
+      materials = materialsV5(index, slot),
+      material = (j: number) => materials[j % materials.length];
+    v2 = true;
+    const parts = FAM[family](r, rr, material, c, slot, seed).map((part) => {
+      const name = String(part[0]).replace(/\+$/, "");
+      if (name !== "wood" || materials.includes("wood")) return part;
+      return [
+        String(part[0]).endsWith("+") ? material(0) + "+" : material(0),
+        ...part.slice(1),
+      ];
+    });
+    if (parts.filter((part) => part[0] !== "X").length < 2)
+      parts.push([material(1) + "+", "c", 0.1, -0.08, 0.1]);
+    const visible = parts
+        .map((part, partIndex) => [part, partIndex] as const)
+        .filter(([part]) => part[0] !== "X"),
+      materialCount = Math.min(materials.length, visible.length),
+      chosen = Array.from(
+        { length: materialCount },
+        (_, materialIndex) =>
+          materials[
+            Math.round(
+              (materialIndex * (materials.length - 1)) / (materialCount - 1),
+            )
+          ],
+      );
+    visible.forEach(([part], partIndex) => {
+      const plus = String(part[0]).endsWith("+");
+      if (!chosen.includes(String(part[0]).replace(/\+$/, "")))
+        part[0] = chosen[partIndex % chosen.length] + (plus ? "+" : "");
+    });
+    chosen.forEach((name, materialIndex) => {
+      if (parts.some((part) => String(part[0]).replace(/\+$/, "") === name))
+        return;
+      const part = visible[visible.length - 1 - materialIndex][0],
+        plus = String(part[0]).endsWith("+");
+      part[0] = name + (plus ? "+" : "");
+    });
+    const names = NOUN[family] ?? [family];
+    return {
+      fam: family,
+      a: ["#b66343", "#9baf92", "#c2a171", "#8caeb3", "#baaca0"][slot],
+      rot: ((Math.floor(r() * 3) - 1) * Math.PI) / 12,
+      fl: r() < 0.5,
+      parts,
+      name: OBJECTS[family]?.name ?? names[hash(seed + family) % names.length],
     };
   }
   const a = (T ? PALS[hash(seed) % PALS.length] : COLORS)[Math.floor(r() * 5)],

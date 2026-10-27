@@ -171,20 +171,20 @@ assert.equal(
     },
     390,
   ),
-  "Top 41%",
+  "Top 29%",
 );
 assert.equal(
   e.api.rank.rankLabel(
     { betterThan: 50, players: 4, bins: Array(20).fill(0) },
     408,
   ),
-  "Top 31%",
+  "Top 21%",
 );
-assert.equal(e.api.rank.fallbackRank(450), "Top 13%");
-assert.equal(e.api.rank.fallbackRank(475), "Top 6%");
-assert.equal(e.api.rank.fallbackRank(490), "Top 3%");
+assert.equal(e.api.rank.fallbackRank(450), "Top 9%");
+assert.equal(e.api.rank.fallbackRank(475), "Top 4%");
+assert.equal(e.api.rank.fallbackRank(490), "Top 2%");
 assert.equal(e.api.rank.fallbackRank(500), "Top 1%");
-ok("Ranks use the strict reference curve while live ranks are paused");
+ok("Ranks use the balanced reference curve while live ranks are paused");
 for (let n = 0; n < 3; n++) {
   const d = store.dateOfNo(n + 1),
     p = store.puzzleOf(d);
@@ -311,15 +311,15 @@ for (let n = 3; n <= e.api.unique.LAST_DAY_INDEX; n++) {
   if ((n - 3) % 200 === 0)
     console.log(`Checking catalogue: ${n - 3} / 1,200 days`);
   const p = store.puzzleOf(store.dateOfNo(n + 1));
-  assert.equal(p.seed.startsWith(n >= 6 ? "p5|" : "p4|"), true);
+  assert.equal(p.seed.startsWith(n >= 6 ? "p6|" : "p4|"), true);
   assert.equal(new Set(p.fams).size, 5);
   const dailyRatios = [],
-    dailyLayouts = [];
+    dailyLayouts = [],
+    dailyRendered = new Set();
   p.fams.forEach((f, i) => {
     assert(!seen.has(f), `Repeated ID ${f}`);
     seen.add(f);
     const raw = gen.mk(p.seed, i, f, p.tw),
-      key = contourKey(raw.parts[0]),
       raster = renderedKey(raw);
     if (n >= 6) {
       const materials = [
@@ -329,16 +329,19 @@ for (let n = 3; n <= e.api.unique.LAST_DAY_INDEX; n++) {
             .filter((name) => name !== "X"),
         ),
       ];
-      assert(materials.length >= 3 && materials.length <= 4);
+      assert(materials.length >= 2 && materials.length <= 4);
       const densities = materials.map((name) => gen.MAT[name][1]);
       dailyRatios.push(Math.max(...densities) / Math.min(...densities));
-      dailyLayouts.push(
-        JSON.stringify(raw.parts.slice(1).map((part) => part.slice(1))),
-      );
+      dailyLayouts.push(raw.fam);
+    } else {
+      const key = contourKey(raw.parts[0]);
+      assert(!contours.has(key), `Repeated contour ${f}`);
+      contours.add(key);
     }
-    assert(!contours.has(key), `Repeated contour ${f}`);
-    contours.add(key);
-    assert(!rendered.has(raster), `Repeated rendered silhouette ${f}`);
+    assert(!dailyRendered.has(raster), `Repeated silhouette within day ${f}`);
+    dailyRendered.add(raster);
+    if (n < 6)
+      assert(!rendered.has(raster), `Repeated historical silhouette ${f}`);
     rendered.add(raster);
   });
   if (n >= 6) {
@@ -373,7 +376,7 @@ for (let n = 3; n <= e.api.unique.LAST_DAY_INDEX; n++) {
   if (n % 20 === 0) global.gc?.();
 }
 assert.equal(seen.size, 6000);
-assert.equal(contours.size, 6000);
+assert.equal(contours.size, 15);
 assert.equal(store.dateOfNo(e.api.unique.LAST_DAY_INDEX + 1), "2030-02-04");
 assert(store.available("2029-10-23")); // Three years, including leap day.
 assert.equal(store.puzzleOf("2028-02-29").fams.length, 5);
@@ -385,7 +388,7 @@ writeFileSync(
   uniqueContact.toBuffer("image/png"),
 );
 ok(
-  "1,200 daily sets / 6,000 silhouettes: no repeats; future sets rotate five layouts with close, medium and wide density puzzles",
+  "1,200 daily sets / 6,000 silhouettes: future sets use five distinct object families with close, medium and wide density puzzles",
 );
 const exhausted = env("2030-02-05");
 exhausted.api.home.home();

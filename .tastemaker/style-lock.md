@@ -61,8 +61,8 @@ Restored from the original palette after the warm direction was rejected.
 - Result language should report a useful number, not offer vague encouragement.
 - Round results explicitly distinguish This shape from the cumulative Total.
 - Accuracy labels use narrower point bands so they follow the steep score curve.
-- Score ranks come from the anonymous live distribution. Never display a simulated percentile as though it came from players.
-- Below 20 submissions, use the conservative fallback rank without claiming it represents today's players.
+- Keep collecting anonymous score distributions, but do not display live player percentiles until the switch is explicitly enabled.
+- Use the strict fixed Top X% reference curve without claiming it represents today's players.
 - Optional accounts belong inside a quiet personal sheet and must never block the daily game.
 - Do not expose generated-sounding daily modifier names.
 - Do not add motion that competes with the wobble physics.

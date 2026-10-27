@@ -10,6 +10,7 @@ import {
   fallbackRank,
   rankLabel,
   REAL_RANK_MINIMUM,
+  USE_LIVE_RANKS,
   submitRank,
   type RankData,
 } from "./rank";
@@ -48,11 +49,11 @@ function distribution(total: number, bins: number[] = Array(20).fill(0)) {
     bucket = Math.min(19, Math.floor(total / 25)),
     markerHeight = bins[bucket] ? Math.max(3, (bins[bucket] / max) * 46) : 3,
     markerY = base - markerHeight;
-  return `<svg class="rank-curve" data-bins="${bins.join(",")}" viewBox="0 0 260 68" role="img" aria-label="Your score marked on today’s score distribution">${bars}<line class="rank-marker" x1="${markerX.toFixed(1)}" y1="${Math.max(7, markerY - 8).toFixed(1)}" x2="${markerX.toFixed(1)}" y2="61"/><circle class="rank-dot" cx="${markerX.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4"/></svg>`;
+  return `<svg class="rank-curve" data-bins="${bins.join(",")}" viewBox="0 0 260 68" role="img" aria-label="Your score marked on the reference distribution">${bars}<line class="rank-marker" x1="${markerX.toFixed(1)}" y1="${Math.max(7, markerY - 8).toFixed(1)}" x2="${markerX.toFixed(1)}" y2="61"/><circle class="rank-dot" cx="${markerX.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4"/></svg>`;
 }
 
 function applyRank(rec: Rec, rank: RankData) {
-  const real = rank.players >= REAL_RANK_MINIMUM,
+  const real = USE_LIVE_RANKS && rank.players >= REAL_RANK_MINIMUM,
     label = rankLabel(rank, rec.tot),
     bins = real ? rank.bins : fallbackBins();
   document.querySelectorAll<HTMLElement>(".rank-pill").forEach((el) => {

@@ -171,16 +171,20 @@ assert.equal(
     },
     390,
   ),
-  "Better than 81% of today’s players",
+  "Top 41%",
 );
 assert.equal(
   e.api.rank.rankLabel(
     { betterThan: 50, players: 4, bins: Array(20).fill(0) },
     408,
   ),
-  "Top 5%",
+  "Top 31%",
 );
-ok("Live ranks use a conservative fallback until the sample is useful");
+assert.equal(e.api.rank.fallbackRank(450), "Top 13%");
+assert.equal(e.api.rank.fallbackRank(475), "Top 6%");
+assert.equal(e.api.rank.fallbackRank(490), "Top 3%");
+assert.equal(e.api.rank.fallbackRank(500), "Top 1%");
+ok("Ranks use the strict reference curve while live ranks are paused");
 for (let n = 0; n < 3; n++) {
   const d = store.dateOfNo(n + 1),
     p = store.puzzleOf(d);

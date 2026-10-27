@@ -19,7 +19,7 @@ Generator versions are date-bound. Do not change a released recipe: the first th
 
 To extend the schedule, append a new date-bound catalogue without changing existing IDs or contours. Check new silhouettes against every earlier catalogue before publishing. Store validates saved results against their dated recipe.
 
-Scores, streaks and settings remain browser-local, so playing never requires an account. Production can also submit one anonymous result per browser and puzzle to a Cloudflare D1 database. The result screen uses a conservative fallback rank until at least 20 real scores exist for that puzzle, then switches to the live distribution.
+Scores, streaks and settings remain browser-local, so playing never requires an account. Production also submits one anonymous result per browser and puzzle to a Cloudflare D1 database. The result screen currently uses a strict fixed reference curve while real scores accumulate in the background. Live percentiles can be enabled later without losing the collected data.
 
 ### Cloudflare score database
 

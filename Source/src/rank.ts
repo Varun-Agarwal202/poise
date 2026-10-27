@@ -8,23 +8,37 @@ export interface RankData {
 
 const PLAYER_KEY = "pinpoise:player";
 export const REAL_RANK_MINIMUM = 20;
-const FALLBACK_CENTER = 225;
-const FALLBACK_SPREAD = 110;
+export const USE_LIVE_RANKS = false;
+const FALLBACK_CENTER = 375;
+const FALLBACK_SPREAD = 70;
+const TOP_PERCENT_ANCHORS: [score: number, top: number][] = [
+  [0, 99],
+  [250, 95],
+  [300, 85],
+  [350, 65],
+  [375, 50],
+  [400, 35],
+  [425, 23],
+  [450, 13],
+  [475, 6],
+  [490, 3],
+  [500, 1],
+];
 
-export function fallbackPercentile(total: number) {
-  const z =
-    (Math.min(500, Math.max(0, total)) - FALLBACK_CENTER) /
-    (FALLBACK_SPREAD * Math.SQRT2);
-  const a = 0.147;
-  const z2 = z * z;
-  const erf =
-    Math.sign(z) *
-    Math.sqrt(1 - Math.exp((-z2 * (4 / Math.PI + a * z2)) / (1 + a * z2)));
-  return Math.min(99, Math.max(1, Math.round(50 * (1 + erf))));
+export function fallbackTopPercent(total: number) {
+  const score = Math.min(500, Math.max(0, total));
+  for (let i = 1; i < TOP_PERCENT_ANCHORS.length; i++) {
+    const [highScore, highTop] = TOP_PERCENT_ANCHORS[i];
+    if (score > highScore) continue;
+    const [lowScore, lowTop] = TOP_PERCENT_ANCHORS[i - 1],
+      progress = (score - lowScore) / (highScore - lowScore);
+    return Math.round(lowTop + (highTop - lowTop) * progress);
+  }
+  return 1;
 }
 
 export const fallbackRank = (total: number) =>
-  `Top ${Math.max(1, 100 - fallbackPercentile(total))}%`;
+  `Top ${fallbackTopPercent(total)}%`;
 
 export function fallbackBins() {
   return Array.from({ length: 20 }, (_, i) => {
@@ -95,6 +109,7 @@ export async function submitRank(rec: Rec): Promise<RankData | null> {
 }
 
 export function rankLabel(rank: RankData, total: number) {
-  if (rank.players < REAL_RANK_MINIMUM) return fallbackRank(total);
+  if (!USE_LIVE_RANKS || rank.players < REAL_RANK_MINIMUM)
+    return fallbackRank(total);
   return `Better than ${rank.betterThan}% of today’s players`;
 }

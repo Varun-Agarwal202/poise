@@ -5,8 +5,18 @@ import {
 } from "@supabase/supabase-js";
 import { mergeSyncSave, syncSnapshot } from "./store";
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const configuredUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const url = (() => {
+  if (!configuredUrl) return undefined;
+  try {
+    // Cloudflare values are easy to paste from a REST screen with `/rest/v1`
+    // attached. The client needs the project origin only.
+    return new URL(configuredUrl).origin;
+  } catch {
+    return undefined;
+  }
+})();
 const client: SupabaseClient | null =
   url && key
     ? createClient(url, key, {

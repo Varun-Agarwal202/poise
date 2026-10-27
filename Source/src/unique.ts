@@ -95,5 +95,83 @@ export function formParts(
   ]);
   return parts;
 }
+
+/** Future editions vary the clipped material layout without changing the frozen silhouette. */
+export function formPartsV5(
+  index: number,
+  material: (n: number) => string,
+): Part[] {
+  const style = index % 5;
+  let points = outline(index);
+  if (style === 2 || style === 3)
+    points = points.flatMap((p, i) => {
+      const a = points[(i + points.length - 1) % points.length],
+        b = points[(i + 1) % points.length];
+      const towards = (q: Point): Point => {
+        const d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+        return [
+          p[0] + ((q[0] - p[0]) * 0.24) / d,
+          p[1] + ((q[1] - p[1]) * 0.24) / d,
+        ];
+      };
+      return [towards(a), towards(b)];
+    });
+  const width = Math.max(...points.map((p) => p[0])),
+    height = Math.max(...points.map((p) => p[1])),
+    scale = 0.7 / Math.max(width, height),
+    x = (width * scale) / 2 + 0.03,
+    y = (height * scale) / 2 + 0.03,
+    xy = points.flatMap(([px, py]) => [
+      (px - width / 2) * scale,
+      (py - height / 2) * scale,
+    ]),
+    base: Part = [
+      material(0),
+      style === 1 || style === 3 || style === 4 ? "b" : "p",
+      ...xy,
+    ],
+    over = (n: number, kind: string, ...values: number[]): Part => [
+      material(n) + "+",
+      kind,
+      ...values,
+    ];
+  // Rotate all five layouts within a day, then shift their order tomorrow.
+  // This keeps the silhouettes guaranteed-unique while making each round read
+  // as a different material puzzle.
+  switch ((Math.floor(index / 5) + index) % 5) {
+    case 0:
+      return [
+        base,
+        over(1, "r", -x, -y, x * 0.72, y * 2),
+        over(2, "r", x * 0.34, -y, x * 0.66, y * 2),
+      ];
+    case 1:
+      return [
+        base,
+        over(1, "r", -x, -y, x * 2, y * 0.7),
+        over(2, "r", -x, y * 0.28, x * 2, y * 0.72),
+      ];
+    case 2:
+      return [
+        base,
+        over(1, "p", -x, -y, x, -y, -x, y),
+        over(2, "p", x * 0.08, -y, x, -y, x, y, -x * 0.45, y),
+      ];
+    case 3:
+      return [
+        base,
+        over(1, "r", -x * 0.25, -y, x * 0.5, y * 2),
+        over(2, "r", -x, -y, x * 0.42, y * 0.76),
+        over(3, "r", x * 0.58, y * 0.24, x * 0.42, y * 0.76),
+      ];
+    default:
+      return [
+        base,
+        over(1, "r", -x, -y, x, y),
+        over(2, "r", 0, 0, x, y),
+        over(3, "r", -x * 0.18, -y, x * 0.36, y * 2),
+      ];
+  }
+}
 export const formName = (index: number) =>
   ["Bracket", "Contour", "Facet", "Cast", "Curve"][index % 5];

@@ -1,5 +1,5 @@
 import { OBJECTS, COLLECTIONS } from "./catalog";
-import { formIndex, formParts, formName } from "./unique";
+import { formIndex, formParts, formPartsV5, formName } from "./unique";
 // Deterministic shape generator. Any change here changes every past and future daily puzzle.
 
 export type Rand = () => number;
@@ -69,9 +69,13 @@ export const G0 = 9.81,
 export const MAT: Record<string, [string | null, number]> = {
   cork: ["#d4c29e", 0.25],
   wood: ["#b98b60", 0.6],
+  rubber: ["#788172", 1.1],
   plastic: [null, 1.2],
+  ceramic: ["#c8c1b5", 2.3],
   glass: ["#94bac1", 2.5],
+  aluminum: ["#adb8bd", 2.7],
   steel: ["#90999e", 7.8],
+  brass: ["#b28b4e", 8.5],
   gold: ["#bda36a", 19.3],
 };
 const WORDS = [
@@ -746,7 +750,9 @@ export const famsFor2 = (n: number) => {
 /** v2 seeds look like `p2|<base>|<twist id>`, so a saved result can always be rebuilt exactly. */
 export const twistOf = (seed: string) => {
   const [v, , t] = seed.split("|");
-  return v === "p2" || v === "p3" || v === "p4" ? (TW[t] ?? TW.classic) : null;
+  return v === "p2" || v === "p3" || v === "p4" || v === "p5"
+    ? (TW[t] ?? TW.classic)
+    : null;
 };
 export const familyIds = () => Object.keys(FAM);
 export const famsFor3 = (n: number) =>
@@ -771,6 +777,42 @@ const holes = (P: Part[], r: Rand): Part[] =>
           Math.min(+q[4], +q[5]) * 0.3,
         ],
   );
+
+const V5_CLOSE = [
+    ["wood", "rubber", "plastic"],
+    ["ceramic", "glass", "aluminum"],
+    ["glass", "aluminum", "ceramic", "plastic"],
+    ["steel", "brass", "gold"],
+  ],
+  V5_MEDIUM = [
+    ["cork", "wood", "rubber", "plastic"],
+    ["wood", "plastic", "glass"],
+    ["plastic", "ceramic", "glass", "aluminum"],
+    ["glass", "aluminum", "steel", "brass"],
+  ],
+  V5_WIDE = [
+    ["cork", "glass", "steel"],
+    ["wood", "ceramic", "brass"],
+    ["plastic", "glass", "gold"],
+  ];
+
+function materialsV5(index: number, slot: number) {
+  const day = Math.floor(index / 5),
+    categories = shuf(
+      ["close", "close", "medium", "medium", "wide"],
+      `v5-categories:${day}`,
+    ),
+    counts = { close: 0, medium: 0, wide: 0 },
+    pools = {
+      close: shuf(V5_CLOSE, `v5-close:${day}`),
+      medium: shuf(V5_MEDIUM, `v5-medium:${day}`),
+      wide: shuf(V5_WIDE, `v5-wide:${day}`),
+    };
+  return categories.map((category) => {
+    const key = category as keyof typeof counts;
+    return pools[key][counts[key]++ % pools[key].length];
+  })[slot];
+}
 
 type Raw = Pick<Shape, "fam" | "a" | "rot" | "parts" | "name" | "fl">;
 /** Without a twist this is generator v1, which must stay byte-identical for puzzles No. 001–002. */
@@ -806,6 +848,20 @@ export function mk(
       rot: (Math.floor(r() * 4) * Math.PI) / 2,
       fl: false,
       parts: formParts(index, m),
+      name: formName(index),
+    };
+  }
+  if (seed.startsWith("p5|")) {
+    const index = formIndex(fam);
+    if (index < 0) throw new Error("Unknown daily silhouette");
+    const materials = materialsV5(index, i),
+      material = (j: number) => materials[j % materials.length];
+    return {
+      fam,
+      a: ["#b66343", "#9baf92", "#c2a171", "#8caeb3", "#baaca0"][i % 5],
+      rot: (Math.floor(r() * 4) * Math.PI) / 2,
+      fl: false,
+      parts: formPartsV5(index, material),
       name: formName(index),
     };
   }

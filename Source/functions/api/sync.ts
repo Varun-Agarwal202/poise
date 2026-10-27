@@ -33,9 +33,15 @@ const json = (body: unknown, status = 200) =>
 async function accountId(request: Request, env: Env) {
   const authorization = request.headers.get("authorization") || "";
   if (!authorization.startsWith("Bearer ")) return null;
-  const url = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
+  const configuredUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
   const key = env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return null;
+  if (!configuredUrl || !key) return null;
+  let url: string;
+  try {
+    url = new URL(configuredUrl).origin;
+  } catch {
+    return null;
+  }
   const response = await fetch(`${url}/auth/v1/user`, {
     headers: {
       apikey: key,

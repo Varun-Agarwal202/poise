@@ -44,7 +44,8 @@ export const pd = (s: string) => {
 };
 
 /** Puzzles before this day number keep generator v1 forever. */
-const V2 = 2;
+const V2 = 2,
+  MATERIAL_V5 = 7;
 export interface Puzzle {
   seed: string;
   fams: string[];
@@ -60,7 +61,8 @@ export function puzzleOf(d: string): Puzzle {
   if (n >= UNIQUE_START) {
     // The catalogue owns the silhouette. A random cutout must never change it.
     if (t === "holes") t = "classic";
-    return { seed: `p4|poise${d}|${t}`, fams: uniqueIds(n), tw: TW[t] };
+    const version = n >= MATERIAL_V5 ? "p5" : "p4";
+    return { seed: `${version}|poise${d}|${t}`, fams: uniqueIds(n), tw: TW[t] };
   }
   return { seed: `p2|poise${d}|${t}`, fams: famsFor2(n), tw: TW[t] };
 }

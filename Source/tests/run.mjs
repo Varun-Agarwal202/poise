@@ -303,18 +303,41 @@ for (let n = 3; n <= e.api.unique.LAST_DAY_INDEX; n++) {
   if ((n - 3) % 200 === 0)
     console.log(`Checking catalogue: ${n - 3} / 1,200 days`);
   const p = store.puzzleOf(store.dateOfNo(n + 1));
+  assert.equal(p.seed.startsWith(n >= 7 ? "p5|" : "p4|"), true);
   assert.equal(new Set(p.fams).size, 5);
+  const dailyRatios = [],
+    dailyLayouts = [];
   p.fams.forEach((f, i) => {
     assert(!seen.has(f), `Repeated ID ${f}`);
     seen.add(f);
     const raw = gen.mk(p.seed, i, f, p.tw),
       key = contourKey(raw.parts[0]),
       raster = renderedKey(raw);
+    if (n >= 7) {
+      const materials = [
+        ...new Set(
+          raw.parts
+            .map((part) => String(part[0]).replace(/\+$/, ""))
+            .filter((name) => name !== "X"),
+        ),
+      ];
+      assert(materials.length >= 3 && materials.length <= 4);
+      const densities = materials.map((name) => gen.MAT[name][1]);
+      dailyRatios.push(Math.max(...densities) / Math.min(...densities));
+      dailyLayouts.push(
+        JSON.stringify(raw.parts.slice(1).map((part) => part.slice(1))),
+      );
+    }
     assert(!contours.has(key), `Repeated contour ${f}`);
     contours.add(key);
     assert(!rendered.has(raster), `Repeated rendered silhouette ${f}`);
     rendered.add(raster);
   });
+  if (n >= 7) {
+    assert(dailyRatios.filter((ratio) => ratio <= 2.5).length >= 2);
+    assert.equal(dailyRatios.filter((ratio) => ratio >= 10).length, 1);
+    assert.equal(new Set(dailyLayouts).size, 5);
+  }
   const shapes = gen.build(p.seed, p.fams);
   for (const [i, s] of shapes.entries()) {
     assert(s.c.every(Number.isFinite));
@@ -351,7 +374,7 @@ writeFileSync(
   uniqueContact.toBuffer("image/png"),
 );
 ok(
-  "1,200 daily sets / 6,000 silhouettes: no repeated IDs, similarity-normalized contours or rendered masks; valid mass, deterministic dates, leap day and no wraparound",
+  "1,200 daily sets / 6,000 silhouettes: no repeats; future sets rotate five layouts with close, medium and wide density puzzles",
 );
 const exhausted = env("2030-02-05");
 exhausted.api.home.home();

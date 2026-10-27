@@ -465,6 +465,9 @@ canvas {
 .round-header > span:first-child {
   flex-basis: 100%;
 }
+.running-total {
+  white-space: nowrap;
+}
 .play-screen .foot {
   grid-column: 1;
   grid-row: 4;
@@ -590,6 +593,10 @@ canvas {
   flex-direction: column;
   align-items: flex-end;
 }
+.score-caption {
+  font-size: 0.7rem;
+  line-height: 1;
+}
 .dots {
   display: flex;
   gap: 8px;
@@ -687,13 +694,8 @@ canvas {
   color: var(--ink);
   overflow: visible;
 }
-.rank-area {
-  fill: color-mix(in srgb, var(--ink) 9%, transparent);
-}
-.rank-line {
-  fill: none;
-  stroke: var(--mute);
-  stroke-width: 1.5;
+.rank-bin {
+  fill: color-mix(in srgb, var(--ink) 24%, transparent);
 }
 .rank-marker {
   stroke: currentColor;
@@ -886,20 +888,28 @@ canvas {
   display: none;
 }
 .stats {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   font-variant-numeric: tabular-nums;
 }
 .stats div {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  min-height: 92px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: color-mix(in srgb, var(--card) 65%, var(--bg));
 }
 .stats b {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 800;
 }
 .stats span {
+  margin-top: 6px;
   font-size: 0.75rem;
   color: var(--mute);
 }
@@ -918,6 +928,18 @@ dialog {
 dialog::backdrop {
   background: rgba(0, 0, 0, 0.65);
 }
+.you-dialog {
+  width: min(600px, calc(100% - 16px));
+  height: calc(100dvh - 16px);
+  max-height: none;
+  margin: 8px 8px 8px auto;
+  border-radius: var(--r-control);
+}
+.you-dialog .sh {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .sh {
   padding: 24px;
   display: flex;
@@ -928,6 +950,42 @@ dialog::backdrop {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.you-local {
+  display: grid;
+  gap: 4px;
+  padding: 16px 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+.sheet-section {
+  display: grid;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.sheet-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.sheet-section-head h3 {
+  color: var(--mute);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.keyboard {
+  padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+}
+.keyboard summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 800;
+}
+.keyboard p {
+  padding: 4px 0 12px;
 }
 .ib {
   display: grid;

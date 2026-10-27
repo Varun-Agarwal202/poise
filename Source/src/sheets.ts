@@ -17,13 +17,12 @@ import { end } from "./end";
 import { LAST_DAY_INDEX } from "./unique";
 
 export const navBtns = () =>
-  `<nav class="primary-nav" aria-label="Main">${ib("hm", "home", "Home")}${ib("ar", "archive", "Archive")}${ib("st", "stats", "Stats")}${ib("se", "tune", "Settings")}${ib("hp", "help", "How to play")}</nav>`;
+  `<nav class="primary-nav" aria-label="Main">${ib("hm", "home", "Home")}${ib("ar", "archive", "Archive")}${ib("me", "user", "You")}${ib("hp", "help", "How to play")}</nav>`;
 export function bindNav() {
   const actions: Record<string, () => void> = {
     hm: home,
-    st: stats,
     ar: archive,
-    se: settings,
+    me: you,
     hp: help,
   };
   for (const [id, action] of Object.entries(actions)) {
@@ -32,7 +31,7 @@ export function bindNav() {
   }
 }
 
-export function sheet(title: string, body: string) {
+export function sheet(title: string, body: string, className = "") {
   let d = $maybe<HTMLDialogElement>("#sheet");
   if (!d) {
     d = document.createElement("dialog");
@@ -50,6 +49,7 @@ export function sheet(title: string, body: string) {
     });
   }
   opener = document.activeElement as HTMLElement | null;
+  d.className = className;
   d.innerHTML = `<div class="sh"><div class="shh"><h2 id="sht">${title}</h2>${ib("xs", "close", "Close")}</div>${body}</div>`;
   d.showModal();
   $("#xs").onclick = () => d!.close();
@@ -84,29 +84,47 @@ function help() {
   );
 }
 
-function settings() {
-  track("settings_open", {});
+function you() {
+  const r = Object.values(db.days),
+    n = r.length,
+    avg = n ? Math.round(r.reduce((a, b) => a + b.tot, 0) / n) : 0,
+    gc = [0, 0, 0, 0, 0];
+  r.forEach((x) => x.pts.forEach((p) => gc[gi(p)]++));
+  const mx = Math.max(1, ...gc);
+  track("you_open", { played: n });
   const dl = sheet(
-    "Settings",
-    `<div class="setl">${seg("theme", "Theme", [
-      ["auto", "Auto"],
-      ["light", "Light"],
-      ["dark", "Dark"],
-    ])}
-  ${seg("homeLayout", "Home layout", [
-    ["auto", "Auto"],
-    ["mobile", "Phone"],
-    ["desktop", "Desktop"],
-  ])}
-  <p class="mute small">Auto fits your window. Choose Phone for a stacked page or Desktop for a side-by-side layout.</p>
-  ${sw("motion", "Reduce motion", sysRM() ? "On, because your device asks for calmer movement." : "Reveal the answer without swinging or bouncing.", prefs.motion === "reduce" || sysRM(), sysRM())}
-  ${sw("sound", "Sound", "Soft tones when you drop and when a score lands.", prefs.sound)}
-  ${"vibrate" in navigator ? sw("haptics", "Vibration", "A light tap when you grab and drop the pin.", prefs.haptics) : ""}
-  ${sw("cb", "Colour-blind friendly colours", "Use an alternative palette for score indicators.", prefs.cb)}
-  ${sw("contrast", "Higher contrast", "Stronger text and outlines.", prefs.contrast)}
-  ${sw("big", "Larger text", "Bigger type across the game.", prefs.big)}</div>
-  <h3>Keyboard</h3><p class="mute small">Tab to the shape, then use the arrow keys to move the pin. Hold Shift for bigger steps. Press Enter or Space to drop it. Tap anywhere in the play area to place the pin, even in a gap. Drag for a magnified view, then press Drop pin.</p>
-  <p class="mute small">Settings stay on this device and never change the puzzle or your score.</p>`,
+    "You",
+    `<div class="you-local"><b>Saved on this device</b><p class="mute small">Play without an account. Your streak and results stay in this browser.</p></div>
+    <section class="sheet-section"><div class="sheet-section-head"><h3>Stats</h3></div>
+    <div class="stats"><div><b>${n}</b><span>Played</span></div><div><b>${streakNow()}</b><span>Streak</span></div><div><b>${avg}</b><span>Average</span></div><div><b>${db.best}</b><span>Best</span></div></div>
+    ${n ? `<div class="dist">${GRADES.map((g, i) => `<div class="bar"><span>${g[1]}</span><span class="trk"><i class="g${i}" style="width:${gc[i] ? Math.max(6, (gc[i] / mx) * 100) : 0}%"></i></span><b>${gc[i]}</b></div>`).join("")}</div>` : '<p class="mute small">Finish today’s puzzle to start your stats.</p>'}
+    ${n ? `<p class="mute small">Best streak: ${db.max}</p>` : ""}</section>
+    <section class="sheet-section"><div class="sheet-section-head"><h3>Appearance</h3></div><div class="setl">${seg(
+      "theme",
+      "Theme",
+      [
+        ["auto", "Auto"],
+        ["light", "Light"],
+        ["dark", "Dark"],
+      ],
+    )}
+    ${sw("cb", "Colour-blind friendly", "Use an alternative score palette.", prefs.cb)}
+    ${sw("contrast", "Higher contrast", "Strengthen text and outlines.", prefs.contrast)}
+    ${sw("big", "Larger text", "Increase type throughout the game.", prefs.big)}</div></section>
+    <section class="sheet-section"><div class="sheet-section-head"><h3>Game</h3></div><div class="setl">${seg(
+      "homeLayout",
+      "Home layout",
+      [
+        ["auto", "Auto"],
+        ["mobile", "Phone"],
+        ["desktop", "Desktop"],
+      ],
+    )}
+    ${sw("motion", "Reduce motion", sysRM() ? "On because your device requests reduced motion." : "Skip swinging and bouncing.", prefs.motion === "reduce" || sysRM(), sysRM())}
+    ${sw("sound", "Sound", "Play drop and score tones.", prefs.sound)}
+    ${"vibrate" in navigator ? sw("haptics", "Vibration", "Tap when you grab and drop the pin.", prefs.haptics) : ""}</div></section>
+    <details class="keyboard"><summary>Keyboard controls</summary><p class="mute small">Arrow keys move the pin. Hold Shift for bigger steps. Enter or Space drops it.</p></details>`,
+    "you-dialog",
   );
   dl.querySelectorAll<HTMLInputElement>(".setl input").forEach(
     (i) =>
@@ -127,22 +145,6 @@ function settings() {
           );
         }
       }),
-  );
-}
-
-function stats() {
-  const r = Object.values(db.days),
-    n = r.length,
-    avg = n ? Math.round(r.reduce((a, b) => a + b.tot, 0) / n) : 0,
-    gc = [0, 0, 0, 0, 0];
-  r.forEach((x) => x.pts.forEach((p) => gc[gi(p)]++));
-  const mx = Math.max(1, ...gc);
-  track("stats_open", { played: n });
-  sheet(
-    "Your stats",
-    `<div class="stats"><div><b>${n}</b><span>Played</span></div><div><b>${avg}</b><span>Average</span></div><div><b>${db.best}</b><span>Best</span></div><div><b>${streakNow()}</b><span>Streak</span></div><div><b>${db.max}</b><span>Max streak</span></div></div>
-  <h3>Every shape you’ve pinned</h3><div class="dist">${GRADES.map((g, i) => `<div class="bar"><span>${g[1]}</span><span class="trk"><i class="g${i}" style="width:${gc[i] ? Math.max(6, (gc[i] / mx) * 100) : 0}%"></i></span><b>${gc[i]}</b></div>`).join("")}</div>
-  <p class="mute small">${n ? "Stats live on this device. No account needed." : "Finish a daily puzzle to start your stats."}</p>`,
   );
 }
 

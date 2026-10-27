@@ -1,6 +1,6 @@
 import { track } from "./analytics";
 import { flag } from "./flags";
-import { copy, css, gi, say, SCORE_CENTER, SCORE_SPREAD } from "./dom";
+import { copy, css, gi, say } from "./dom";
 import { TODAY, dnOf, noOf, dateOfNo, type Rec } from "./store";
 
 /** A friend's result, decoded from a `#vs=<puzzleNo>.<p1>.<p2>.<p3>.<p4>.<p5>` link. Contains scores only, never pin positions. */
@@ -229,41 +229,31 @@ export async function paintShare(source: HTMLElement): Promise<Blob> {
   const curveX = padX;
   const curveW = 220;
   const curveBase = scoreBottom - 4;
-  const curveH = 46;
-  const curveY = (score: number) =>
-    curveBase -
-    curveH *
-      Math.exp(-0.5 * Math.pow((score - SCORE_CENTER) / SCORE_SPREAD, 2));
-  ctx.beginPath();
-  for (let i = 0; i <= 50; i++) {
-    const score = i * 10;
-    const x = curveX + (score / 500) * curveW;
-    const y = curveY(score);
-    if (i) ctx.lineTo(x, y);
-    else ctx.moveTo(x, y);
-  }
-  ctx.lineTo(curveX + curveW, curveBase);
-  ctx.lineTo(curveX, curveBase);
-  ctx.closePath();
+  const bins = (
+    source.querySelector<SVGElement>(".rank-curve")?.dataset.bins || ""
+  )
+    .split(",")
+    .map(Number)
+    .filter(Number.isFinite);
+  const peak = Math.max(1, ...bins);
+  const gap = 2;
+  const binW = curveW / 20;
+  ctx.fillStyle = mute;
   ctx.save();
-  ctx.globalAlpha = 0.09;
-  ctx.fillStyle = ink;
-  ctx.fill();
+  ctx.globalAlpha = 0.35;
+  bins.forEach((amount, i) => {
+    const height = amount ? Math.max(3, (amount / peak) * 46) : 0;
+    ctx.beginPath();
+    ctx.roundRect(curveX + i * binW, curveBase - height, binW - gap, height, 1);
+    ctx.fill();
+  });
   ctx.restore();
-  ctx.beginPath();
-  for (let i = 0; i <= 50; i++) {
-    const score = i * 10;
-    const x = curveX + (score / 500) * curveW;
-    const y = curveY(score);
-    if (i) ctx.lineTo(x, y);
-    else ctx.moveTo(x, y);
-  }
-  ctx.strokeStyle = mute;
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
   const numericTotal = Number(total) || 0;
   const markerX = curveX + (numericTotal / 500) * curveW;
-  const markerY = curveY(numericTotal);
+  const markerBucket = Math.min(19, Math.floor(numericTotal / 25));
+  const markerAmount = bins[markerBucket] || 0;
+  const markerY =
+    curveBase - (markerAmount ? Math.max(3, (markerAmount / peak) * 46) : 3);
   ctx.strokeStyle = ink;
   ctx.beginPath();
   ctx.moveTo(markerX, Math.max(scoreTop + 28, markerY - 8));

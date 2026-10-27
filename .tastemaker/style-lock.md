@@ -50,6 +50,7 @@ Restored from the original palette after the warm direction was rejected.
 - Daily set strip and results sheet use rules and numbering like a printed test record.
 - Mixed-material objects show density through prominent values, material-colored bars, and relative multipliers.
 - Main actions use squared instrument controls, not generic pill buttons.
+- Stats and settings share one right-side You panel, keeping the main tool rail compact.
 
 ## Guardrails
 
@@ -58,7 +59,11 @@ Restored from the original palette after the warm direction was rejected.
 - No decorative process labels or interface copy that explains the visual treatment.
 - Density differences must be shown visually, never explained with a slogan.
 - Result language should report a useful number, not offer vague encouragement.
-- Score ranks use a broad, conservative curve so strong scores do not overclaim rarity.
+- Round results explicitly distinguish This shape from the cumulative Total.
+- Accuracy labels use narrower point bands so they follow the steep score curve.
+- Score ranks come from the anonymous live distribution. Never display a simulated percentile as though it came from players.
+- Below 10 submissions, report the sample size instead of a percentile.
+- Optional accounts belong inside a quiet personal sheet and must never block the daily game.
 - Do not expose generated-sounding daily modifier names.
 - Do not add motion that competes with the wobble physics.
 - Keep the object canvas visually dominant.

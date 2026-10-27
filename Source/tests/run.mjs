@@ -4,7 +4,7 @@ import { createCanvas } from "@napi-rs/canvas";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom';`;
+const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom'; export * as rank from './src/rank';`;
 const compiled = await bundle({
   stdin: { contents: entry, resolveDir: process.cwd(), loader: "ts" },
   bundle: true,
@@ -136,9 +136,26 @@ function ok(label) {
 }
 const e = env(),
   { gen, legacy, store } = e.api;
-assert.equal(e.api.dom.rankOf(408), "Top 5%");
-assert.equal(e.api.dom.rankOf(225), "Top 50%");
-ok("Rank curve stays conservative at high scores");
+assert.equal(e.api.dom.GRADES[e.api.dom.gi(gen.scoreOf2(1.1))][1], "Excellent");
+assert.equal(
+  e.api.dom.GRADES[e.api.dom.gi(gen.scoreOf2(1.4))][1],
+  "Very close",
+);
+assert.equal(e.api.dom.GRADES[e.api.dom.gi(33)][1], "Off center");
+ok("Accuracy labels follow the steep scoring curve");
+assert.equal(
+  e.api.rank.rankLabel({
+    betterThan: 81,
+    players: 42,
+    bins: Array(20).fill(1),
+  }),
+  "Better than 81% of today’s players",
+);
+assert.equal(
+  e.api.rank.rankLabel({ betterThan: 50, players: 4, bins: Array(20).fill(0) }),
+  "4 players today",
+);
+ok("Live rank labels wait for a useful sample");
 for (let n = 0; n < 3; n++) {
   const d = store.dateOfNo(n + 1),
     p = store.puzzleOf(d);
@@ -316,7 +333,7 @@ exhausted.w.document.querySelector("#ar").click();
 assert.equal(exhausted.w.document.querySelectorAll(".arow").length, 1203);
 exhausted.close();
 ok(
-  "Catalogue exhaustion keeps archive, stats, settings and home accessible without recycling a puzzle",
+  "Catalogue exhaustion keeps archive, the You panel and home accessible without recycling a puzzle",
 );
 // Wobble is deterministic, distance-driven and speed-bounded across shapes.
 const { physics } = e.api;
@@ -434,6 +451,10 @@ writeFileSync(
 const { game, stage } = e.api;
 game.start("daily");
 e.frame();
+assert.equal(
+  e.w.document.querySelector("#hint").textContent,
+  "Tap to place the pin, drag to adjust, then press Drop pin.",
+);
 const press = (key) =>
   stage.view.cv.dispatchEvent(
     new e.w.KeyboardEvent("keydown", { key, cancelable: true }),
@@ -446,6 +467,13 @@ assert.equal(game.G.res.length, 1);
 assert.equal(store.db.pg[store.TODAY].length, 1);
 e.frame();
 assert.equal(game.ui.ph, "result");
+assert(
+  e.w.document.querySelector(".running-total").textContent.includes("Total"),
+);
+assert.equal(
+  e.w.document.querySelector(".score-caption").textContent,
+  "This shape",
+);
 ok("Repeated Drop pin callback scores once and persists exactly one round");
 assert.equal(game.G.ps.th, 0);
 assert(e.w.document.querySelector("#ft").textContent.includes("Motion is off"));
@@ -491,7 +519,7 @@ assert.equal(
   e.w.document.querySelectorAll("#share-card .result-object canvas").length,
   5,
 );
-assert.match(e.w.document.querySelector("#eh").textContent, /^Top \d+%$/);
+assert.equal(e.w.document.querySelector("#eh").textContent, "Your score");
 assert.equal(e.w.document.querySelectorAll(".rank-curve").length, 2);
 assert(
   !e.w.document
@@ -605,14 +633,20 @@ assert.equal(e.w.document.querySelector("#copy-text").textContent, "Copied");
 e.api.home.home();
 assert(e.w.document.querySelector(".home-rule").textContent.includes("gap"));
 assert(!e.w.document.body.textContent.includes("Practice"));
-assert.equal(e.w.document.querySelectorAll(".primary-nav button").length, 5);
+assert.equal(e.w.document.querySelectorAll(".primary-nav button").length, 4);
 assert(e.w.document.querySelector("#hp"));
 e.w.document.querySelector("#hp").click();
 assert(e.w.document.querySelector("#sht").textContent.includes("How to play"));
 e.w.document.querySelector("#xs").click();
-ok(
-  "Home exposes Home, Archive, Stats, Settings and How to play; no practice action",
-);
+assert(e.w.document.querySelector("#me"));
+assert(!e.w.document.querySelector("#st"));
+assert(!e.w.document.querySelector("#se"));
+e.w.document.querySelector("#me").click();
+assert.equal(e.w.document.querySelector("#sht").textContent, "You");
+assert.equal(e.w.document.querySelectorAll(".stats > div").length, 4);
+assert(e.w.document.querySelector('input[name="theme"]'));
+e.w.document.querySelector("#xs").click();
+ok("Home exposes Home, Archive, You and How to play; no practice action");
 // Archive resumes after midnight must not count as today's completion.
 const old = {
   days: {},

@@ -1,10 +1,12 @@
 import { build } from "./gen";
 import { thumb, stop, dpr } from "./stage";
-import { $, app, rankOf, SCORE_CENTER, SCORE_SPREAD, setTitle } from "./dom";
+import { $, app, setTitle } from "./dom";
 import { TODAY, noOf, fmtDate, untilNext, type Rec } from "./store";
 import { copyResult, copyText } from "./share";
 import { ui } from "./game";
 import { navBtns, bindNav } from "./sheets";
+import { rankLabel, submitRank, type RankData } from "./rank";
+import { track } from "./analytics";
 
 const siteHost = (
   (import.meta.env.VITE_SITE_URL as string | undefined) ||
@@ -22,26 +24,40 @@ function objects(rec: Rec, names: string[], dprX: number) {
     .join("");
 }
 
-function bellCurve(total: number) {
+function distribution(total: number, bins: number[] = Array(20).fill(0)) {
   const left = 8,
     width = 244,
     base = 61,
-    height = 47,
-    y = (score: number) =>
-      base -
-      height *
-        Math.exp(-0.5 * Math.pow((score - SCORE_CENTER) / SCORE_SPREAD, 2)),
-    pts = Array.from({ length: 51 }, (_, i) => {
-      const score = i * 10;
-      return [left + (score / 500) * width, y(score)];
-    }),
-    line = pts
-      .map(([x, py], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${py.toFixed(1)}`)
-      .join(" "),
-    area = `${line} L${left + width} ${base} L${left} ${base} Z`,
+    max = Math.max(1, ...bins),
+    gap = 2,
+    barWidth = width / bins.length - gap,
+    bars = bins
+      .map((amount, i) => {
+        const height = amount ? Math.max(3, (amount / max) * 46) : 0;
+        return `<rect class="rank-bin" x="${(left + i * (width / bins.length)).toFixed(1)}" y="${(base - height).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${height.toFixed(1)}" rx="1"/>`;
+      })
+      .join(""),
     markerX = left + (Math.max(0, Math.min(500, total)) / 500) * width,
-    markerY = y(total);
-  return `<svg class="rank-curve" viewBox="0 0 260 68" role="img" aria-label="Your score marked on the score distribution"><path class="rank-area" d="${area}"/><path class="rank-line" d="${line}"/><line class="rank-marker" x1="${markerX.toFixed(1)}" y1="${Math.max(7, markerY - 8).toFixed(1)}" x2="${markerX.toFixed(1)}" y2="61"/><circle class="rank-dot" cx="${markerX.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4"/></svg>`;
+    bucket = Math.min(19, Math.floor(total / 25)),
+    markerHeight = bins[bucket] ? Math.max(3, (bins[bucket] / max) * 46) : 3,
+    markerY = base - markerHeight;
+  return `<svg class="rank-curve" data-bins="${bins.join(",")}" viewBox="0 0 260 68" role="img" aria-label="Your score marked on today’s score distribution">${bars}<line class="rank-marker" x1="${markerX.toFixed(1)}" y1="${Math.max(7, markerY - 8).toFixed(1)}" x2="${markerX.toFixed(1)}" y2="61"/><circle class="rank-dot" cx="${markerX.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4"/></svg>`;
+}
+
+function applyRank(rec: Rec, rank: RankData) {
+  const label = rankLabel(rank);
+  document.querySelectorAll<HTMLElement>(".rank-pill").forEach((el) => {
+    el.textContent = label;
+  });
+  document.querySelectorAll<SVGElement>(".rank-curve").forEach((el) => {
+    el.outerHTML = distribution(rec.tot, rank.bins);
+  });
+  setTitle(`${rec.tot}/500 · ${label}`);
+  track("rank_received", {
+    puzzle: noOf(rec.d),
+    players: rank.players,
+    better_than: rank.betterThan,
+  });
 }
 
 export function end(rec: Rec, isNew: boolean) {
@@ -50,23 +66,23 @@ export function end(rec: Rec, isNew: boolean) {
   app.className = "result-screen";
   const rs = build(rec.seed, rec.fams),
     names = rs.map((s) => s.name),
-    rank = rankOf(rec.tot);
+    waiting = "Checking scores";
   app.innerHTML = `<section id="result-sheet" aria-label="Your results">
     <header class="receipt-heading site-header"><span class="wordmark">Pinpoise</span><div data-copy-exclude>${navBtns()}</div></header>
-    <div class="result-summary"><div class="rank-summary"><p class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</p><h1 class="rank-pill" id="eh" tabindex="-1">${rank}</h1>${bellCurve(rec.tot)}${isNew ? '<p class="mute small">Personal best</p>' : ""}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
+    <div class="result-summary"><div class="rank-summary"><p class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</p><h1 class="rank-pill" id="eh" tabindex="-1">${waiting}</h1>${distribution(rec.tot)}${isNew ? '<p class="mute small">Personal best</p>' : ""}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
     <div class="result-objects">${objects(rec, names, dpr)}</div>
     <div class="receipt-footer"><span class="pin-key"><i class="key-player"></i>Your pin <i class="key-target"></i>Balance point</span></div>
   </section>
   <div id="share-card" class="share-card" aria-hidden="true">
     <div class="share-top"><span class="wordmark">Pinpoise</span><span class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</span></div>
-    <div class="share-score"><div class="share-rank"><p class="share-tier rank-pill">${rank}${isNew ? " · Personal best" : ""}</p>${bellCurve(rec.tot)}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
+    <div class="share-score"><div class="share-rank"><p class="share-tier rank-pill">${waiting}</p>${distribution(rec.tot)}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
     <div class="result-objects">${objects(rec, names, 2)}</div>
     <div class="share-foot"><span class="pin-key"><i class="key-player"></i>Your pin <i class="key-target"></i>Balance point</span><span>${siteHost}</span></div>
   </div>
   <div class="result-actions"><div class="copy-pair"><button class="btn" id="copy-result" aria-describedby="copy-description">Copy image</button><button class="text-btn" id="copy-text" aria-describedby="copy-text-description">Copy text</button></div><span id="copy-description" class="vh">Copy these results as an image.</span><span id="copy-text-description" class="vh">Copy these results as text.</span><p class="mute small"${rec.d === TODAY ? " data-next" : ""}>${rec.d === TODAY ? "Next puzzle in " + untilNext() : "Result saved on this device."}</p></div>
   <p class="small mute" id="copy-status" role="status"></p>`;
   app.scrollTop = 0;
-  setTitle(`${rec.tot}/500 · ${rank}`);
+  setTitle(`${rec.tot}/500`);
   for (const root of ["#result-sheet", "#share-card"])
     document
       .querySelectorAll<HTMLCanvasElement>(`${root} .result-object canvas`)
@@ -75,4 +91,12 @@ export function end(rec: Rec, isNew: boolean) {
   $("#copy-result").onclick = () => copyResult(rec);
   $("#copy-text").onclick = () => copyText(rec);
   bindNav();
+  void submitRank(rec).then((rank) => {
+    if (ui.ph !== "end" || !document.querySelector("#result-sheet")) return;
+    if (rank) applyRank(rec, rank);
+    else
+      document.querySelectorAll<HTMLElement>(".rank-pill").forEach((el) => {
+        el.textContent = "Your score";
+      });
+  });
 }

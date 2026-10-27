@@ -32,29 +32,13 @@ export const eob = (u: number) =>
 
 /** Minimum points and the readable grade. */
 export const GRADES: [number, string][] = [
-  [90, "Excellent aim"],
+  [95, "Pinpoint"],
+  [85, "Excellent"],
   [70, "Very close"],
-  [45, "Close"],
-  [20, "Off center"],
-  [0, "Way off"],
+  [40, "Close"],
+  [0, "Off center"],
 ];
 export const gi = (p: number) => GRADES.findIndex((q) => p >= q[0]);
-/** Shared estimated score distribution used by the rank label and both curve renders. */
-export const SCORE_CENTER = 225;
-export const SCORE_SPREAD = 110;
-
-export function percentileOf(total: number) {
-  const z = (cl(total, 0, 500) - SCORE_CENTER) / (SCORE_SPREAD * Math.SQRT2);
-  const a = 0.147;
-  const z2 = z * z;
-  const erf =
-    Math.sign(z) *
-    Math.sqrt(1 - Math.exp((-z2 * (4 / Math.PI + a * z2)) / (1 + a * z2)));
-  return cl(Math.round(50 * (1 + erf)), 1, 99);
-}
-export const topPercentOf = (total: number) =>
-  Math.max(1, 100 - percentileOf(total));
-export const rankOf = (total: number) => `Top ${topPercentOf(total)}%`;
 
 export const gdots = (pts: number[], lg = false) =>
   `<span class="dots${lg ? " lg" : ""}" role="img" aria-label="Grades: ${pts.map((p) => GRADES[gi(p)][1]).join(", ")}">${pts.map((p, i) => `<i class="g${gi(p)}${lg ? " pop" : ""}"${lg ? ` style="animation-delay:${0.85 + i * 0.07}s"` : ""}></i>`).join("")}</span>`;
@@ -65,6 +49,7 @@ const IC = {
   archive:
     '<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  user: '<circle cx="12" cy="8" r="3.5"/><path d="M5.5 21v-2.5a6.5 6.5 0 0 1 13 0V21"/>',
   tune: '<path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.5"/><circle cx="8" cy="17" r="2.5"/>',
   help: '<circle cx="12" cy="12" r="9"/><path d="M9.2 9.6a2.8 2.8 0 1 1 4 2.5c-.7.4-1.2 1-1.2 1.9"/><path d="M12 17.2h.01"/>',
 };

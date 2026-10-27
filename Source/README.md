@@ -19,6 +19,20 @@ Generator versions are date-bound. Do not change a released recipe: the first th
 
 To extend the schedule, append a new date-bound catalogue without changing existing IDs or contours. Check new silhouettes against every earlier catalogue before publishing. Store validates saved results against their dated recipe.
 
-Production uses browser-local storage. Set VITE_SITE_URL for public canonical/Open Graph URLs before deploying to HTTPS. Copy captures the displayed results sheet as a PNG and writes it directly to the clipboard; image clipboard support varies by browser.
+Scores, streaks and settings remain browser-local, so playing never requires an account. Production can also submit one anonymous result per browser and puzzle to a Cloudflare D1 database. The result screen only reports a percentile once at least 10 real scores exist for that puzzle.
+
+### Cloudflare score database
+
+The Pages project root must be `Source`, with `npm run build` as the build command and `dist` as the output directory.
+
+1. In Cloudflare, create a D1 database named `pinpoise-scores`.
+2. Open its Console and run `migrations/0001_scores.sql`.
+3. Open the Pinpoise Pages project, then go to Settings, Bindings and add a D1 binding.
+4. Use `SCORES` as the variable name and select `pinpoise-scores`.
+5. Redeploy the site so the Function receives the binding.
+
+The API stores a one-way hash of a random per-browser identifier. It does not store names, email addresses or IP addresses. Optional account syncing is intentionally separate from this anonymous ranking layer.
+
+Set VITE_SITE_URL for public canonical/Open Graph URLs before deploying to HTTPS. Copy captures the displayed results sheet as a PNG and writes it directly to the clipboard; image clipboard support varies by browser.
 
 Design rationale and Taste Skill direction: .taste-skill/inventory.md and direction.json. Automated outcomes: .taste-skill/qa/tests.json. Browser inspection must supplement the simulated DOM tests.

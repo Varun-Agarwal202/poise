@@ -30,7 +30,6 @@ import {
   RM,
   GRADES,
   gi,
-  percentileOf,
   countUp,
   say,
   setTitle,
@@ -235,13 +234,10 @@ function round() {
   g.t0 = performance.now();
   g.coach = g.r === 0 && flag("coach") && !playedCount();
   setTitle(`${"No. " + noOf(g.d)} · Shape ${g.r + 1} of ${RN}`);
-  const hint = g.coach
-    ? "Heavier parts pull more. Place the pin, then drop it."
-    : matchMedia("(pointer:coarse)").matches
-      ? TAP_HINT
-      : DRAG_HINT;
+  const coarse = matchMedia("(pointer:coarse)").matches;
+  const hint = coarse ? TAP_HINT : DRAG_HINT;
   app.innerHTML = `<header class="site-header"><span class="wordmark">Pinpoise</span>${navBtns()}</header>
-  <div class="round-header"><span class="mute">No. ${noOf(g.d)} / Object ${g.r + 1} of ${RN}</span>${dots(g)}<span><b id="sc">${total(g)}</b><span class="mute"> / 500</span></span></div>
+  <div class="round-header"><span class="mute">No. ${noOf(g.d)} / Object ${g.r + 1} of ${RN}</span>${dots(g)}<span class="running-total"><span class="mute">Total</span> <b id="sc">${total(g)}</b><span class="mute"> / 500</span></span></div>
   <div id="stage"><canvas id="cv"></canvas></div><div class="foot fx" id="ft"><div class="object-heading"><h1 class="lede">${R.name}</h1>${legend(R)}</div><p class="small rule">Aim for the center of mass. It can lie in a gap.</p><span class="mute small" id="hint">${hint}</span><button class="btn" id="dp" disabled>Drop pin</button></div>`;
   app.scrollTop = 0;
   bindNav();
@@ -336,6 +332,8 @@ function round() {
 
   cv.onkeydown = (e) => {
     if (ui.ph !== "aim") return;
+    g.kbf = true;
+    setHint(KEY_HINT);
     const k = e.key,
       d = e.shiftKey ? 12 : 3,
       P = g.P || (g.P = { ...mid() }),
@@ -358,7 +356,7 @@ function round() {
   };
   cv.onfocus = () => {
     g.kbf = cv.matches(":focus-visible");
-    if (g.kbf) setHint(KEY_HINT);
+    if (g.kbf && !coarse) setHint(KEY_HINT);
   };
   cv.onblur = () => {
     g.kbf = false;
@@ -536,7 +534,7 @@ function result() {
   $(".round-header .dots").outerHTML = dots(g);
   const vs = vsFor(g.d);
   $("#ft").innerHTML =
-    `<div class="row pop"><span class="big c${k}">${GRADES[k][1]}</span><span class="ptw"><span class="pts" id="rp">+0</span>${vs ? `<span class="mute small">Friend +${vs.pts[g.r]}</span>` : ""}</span></div>
+    `<div class="row pop"><span class="big c${k}">${GRADES[k][1]}</span><span class="ptw"><span class="mute score-caption">This shape</span><span class="pts" id="rp">+0</span>${vs ? `<span class="mute small">Friend +${vs.pts[g.r]}</span>` : ""}</span></div>
   <span class="mute small">${verdict(cm, g.ps!)}</span>
   <span class="vh" id="rs">${GRADES[k][1]}. ${verdict(cm, g.ps!)} ${c.pts} points. Total ${tot} so far.</span>
   <button class="btn" id="nx" aria-describedby="rs">${lastR ? "See results" : "Next shape"}</button>`;
@@ -600,7 +598,6 @@ function finish() {
     track("daily_complete", {
       puzzle: dnOf(g.d) + 1,
       total: tot,
-      percentile: percentileOf(tot),
       streak: db.streak,
       twist: g.tw?.id ?? "none",
     });

@@ -31,7 +31,32 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebSite","name":"Pinpoise","alternateName":["poisedaily.com"],"url":"https://poisedaily.com/"}
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://poisedaily.com/#organization",
+      "name": "Pinpoise",
+      "url": "https://poisedaily.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://poisedaily.com/icon-512.png",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://poisedaily.com/#website",
+      "name": "Pinpoise",
+      "alternateName": ["Pinpoise Daily", "poisedaily.com"],
+      "url": "https://poisedaily.com/",
+      "inLanguage": "en",
+      "publisher": { "@id": "https://poisedaily.com/#organization" }
+    }
+  ]
+}
 </script>
 </head>
 <body>

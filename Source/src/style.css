@@ -29,6 +29,10 @@ html[data-big] {
 #cv:focus-visible {
   outline: none;
 }
+#stage:has(#cv:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
 .fs {
   border: 0;
   margin: 0;
@@ -218,6 +222,10 @@ html[data-big] {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
+::selection {
+  background: var(--ink);
+  color: var(--bg);
+}
 html,
 body {
   margin: 0;
@@ -288,6 +296,7 @@ h3 {
     max(var(--pad), env(safe-area-inset-left, 0px));
   max-width: 1440px;
   margin: auto;
+  scrollbar-color: var(--mute) transparent;
 }
 .site-header {
   display: flex;
@@ -446,7 +455,7 @@ canvas {
 }
 .cap {
   min-height: 1.4em;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s ease-out;
 }
 .cap.off {
   opacity: 0;
@@ -1370,7 +1379,7 @@ dialog::backdrop {
     display: block;
     margin: 0;
     text-align: right;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
   }
   .receipt-footer {
     font-size: 0.75rem;
@@ -1399,8 +1408,8 @@ dialog::backdrop {
     text-align: center;
   }
   .primary-nav .ib {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
   }
   .sh {
     padding: 20px;
@@ -1560,7 +1569,7 @@ dialog::backdrop {
     border-radius: 4px;
   }
   .lg-item b {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
   }
   .lg-item em {
     font-size: 1rem;
@@ -1569,7 +1578,7 @@ dialog::backdrop {
     height: 5px;
   }
   .lg-density {
-    font-size: 0.68rem;
+    font-size: 0.75rem;
   }
   .lg-unit {
     display: none;

@@ -87,6 +87,6 @@ Restored from the original palette after the warm direction was rejected.
 
 - The daily silhouettes are the product's first priority. Visual novelty outranks catalogue size.
 - Use five different construction families per day, not five variations of a shared tiled contour system.
-- Favor recognizable but strange objects and assemblies such as molecules, twigs, tools, animals, hollow forms and welded hybrids.
+- Build each daily five as a deliberate mix: recognizable objects first, then stranger organic or mechanical constructions such as molecules, twigs and welded hybrids.
 - Preserve each family's character with near-upright rotations and meaningful material placement.
 - Keep material colors distinct without making them loud: earthy wood, ocean-blue plastic, cool glass and metal, warm brass and gold.

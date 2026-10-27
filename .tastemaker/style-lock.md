@@ -67,3 +67,17 @@ Restored from the original palette after the warm direction was rejected.
 - Do not expose generated-sounding daily modifier names.
 - Do not add motion that competes with the wobble physics.
 - Keep the object canvas visually dominant.
+
+## 2026-10-27 accounts
+
+- Keep accounts optional and inside the You sheet.
+- Put Continue with Google first, followed by email and password.
+- Support sign in, account creation and password recovery. Do not require a magic link for routine sign-in.
+
+## 2026-10-27 daily progression
+
+- Start the varied material recipe on October 27, 2026.
+- Order each set from an obvious density contrast into subtler density differences and more complex layouts.
+- Keep all 5 silhouettes mathematically unique and use 5 distinct material layouts per day.
+- Separate wood, plastic and gold clearly: dark brown wood, blue plastic and brighter warm gold.
+- On desktop, give the density panel stronger hierarchy through scale, spacing, contrast and larger values. Keep the phone version compact.

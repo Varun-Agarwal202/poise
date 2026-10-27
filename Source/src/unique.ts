@@ -135,10 +135,14 @@ export function formPartsV5(
       kind,
       ...values,
     ];
-  // Rotate all five layouts within a day, then shift their order tomorrow.
-  // This keeps the silhouettes guaranteed-unique while making each round read
-  // as a different material puzzle.
-  switch ((Math.floor(index / 5) + index) % 5) {
+  const day = Math.floor(index / 5),
+    slot = index % 5,
+    easy = day % 2 ? [1, 0] : [0, 1],
+    hard = day % 2 ? [4, 3] : [3, 4],
+    layout = [...easy, 2, ...hard][slot];
+  // Layout complexity rises through the set. Daily swaps keep the sequence
+  // from feeling mechanically identical without flattening that progression.
+  switch (layout) {
     case 0:
       return [
         base,

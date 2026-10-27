@@ -68,15 +68,15 @@ export const G0 = 9.81,
   BOXM = EXT / 0.78;
 export const MAT: Record<string, [string | null, number]> = {
   cork: ["#d4c29e", 0.25],
-  wood: ["#b98b60", 0.6],
+  wood: ["#855f43", 0.6],
   rubber: ["#788172", 1.1],
-  plastic: [null, 1.2],
+  plastic: ["#4c74c9", 1.2],
   ceramic: ["#c8c1b5", 2.3],
   glass: ["#94bac1", 2.5],
   aluminum: ["#adb8bd", 2.7],
   steel: ["#90999e", 7.8],
   brass: ["#b28b4e", 8.5],
-  gold: ["#bda36a", 19.3],
+  gold: ["#d5a62b", 19.3],
 };
 const WORDS = [
   "PLANK",
@@ -798,10 +798,8 @@ const V5_CLOSE = [
 
 function materialsV5(index: number, slot: number) {
   const day = Math.floor(index / 5),
-    categories = shuf(
-      ["close", "close", "medium", "medium", "wide"],
-      `v5-categories:${day}`,
-    ),
+    // Obvious contrast first, subtle density judgement last.
+    categories = ["wide", "medium", "medium", "close", "close"],
     counts = { close: 0, medium: 0, wide: 0 },
     pools = {
       close: shuf(V5_CLOSE, `v5-close:${day}`),

@@ -88,18 +88,57 @@ export async function initAccount() {
   const { data } = await client.auth.getSession();
   setSession(data.session);
   if (data.session) await syncSession(data.session);
-  client.auth.onAuthStateChange((_event, next) => {
+  client.auth.onAuthStateChange((event, next) => {
     setSession(next);
     if (next) setTimeout(() => void syncSession(next), 0);
+    if (event === "PASSWORD_RECOVERY")
+      setTimeout(
+        () => dispatchEvent(new Event("pinpoise:password-recovery")),
+        0,
+      );
   });
 }
 
-export async function sendSignInLink(email: string) {
+export async function signInWithGoogle() {
   if (!client) return "Account syncing is not configured yet.";
-  const { error } = await client.auth.signInWithOtp({
+  const { error } = await client.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: location.origin },
+  });
+  return error ? error.message : "";
+}
+
+export async function signInWithPassword(email: string, password: string) {
+  if (!client) return "Account syncing is not configured yet.";
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  return error ? error.message : "";
+}
+
+export async function createAccount(email: string, password: string) {
+  if (!client)
+    return {
+      error: "Account syncing is not configured yet.",
+      confirmation: false,
+    };
+  const { data, error } = await client.auth.signUp({
     email,
+    password,
     options: { emailRedirectTo: location.origin },
   });
+  return { error: error?.message || "", confirmation: !data.session };
+}
+
+export async function sendPasswordReset(email: string) {
+  if (!client) return "Account syncing is not configured yet.";
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin,
+  });
+  return error ? error.message : "";
+}
+
+export async function updatePassword(password: string) {
+  if (!client) return "Account syncing is not configured yet.";
+  const { error } = await client.auth.updateUser({ password });
   return error ? error.message : "";
 }
 

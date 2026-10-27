@@ -45,7 +45,7 @@ export const pd = (s: string) => {
 
 /** Puzzles before this day number keep generator v1 forever. */
 const V2 = 2,
-  MATERIAL_V5 = 7;
+  MATERIAL_V5 = 6;
 export interface Puzzle {
   seed: string;
   fams: string[];

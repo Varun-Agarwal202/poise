@@ -32,7 +32,11 @@ const compiled = await bundle({
           contents: `export const createClient = () => ({ auth: {
               getSession: async () => ({ data: { session: null } }),
               onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
-              signInWithOtp: async () => ({ error: null }),
+              signInWithOAuth: async () => ({ error: null }),
+              signInWithPassword: async () => ({ error: null }),
+              signUp: async () => ({ data: { session: null }, error: null }),
+              resetPasswordForEmail: async () => ({ error: null }),
+              updateUser: async () => ({ error: null }),
               signOut: async () => ({ error: null })
             }});`,
         }));
@@ -303,7 +307,7 @@ for (let n = 3; n <= e.api.unique.LAST_DAY_INDEX; n++) {
   if ((n - 3) % 200 === 0)
     console.log(`Checking catalogue: ${n - 3} / 1,200 days`);
   const p = store.puzzleOf(store.dateOfNo(n + 1));
-  assert.equal(p.seed.startsWith(n >= 7 ? "p5|" : "p4|"), true);
+  assert.equal(p.seed.startsWith(n >= 6 ? "p5|" : "p4|"), true);
   assert.equal(new Set(p.fams).size, 5);
   const dailyRatios = [],
     dailyLayouts = [];
@@ -313,7 +317,7 @@ for (let n = 3; n <= e.api.unique.LAST_DAY_INDEX; n++) {
     const raw = gen.mk(p.seed, i, f, p.tw),
       key = contourKey(raw.parts[0]),
       raster = renderedKey(raw);
-    if (n >= 7) {
+    if (n >= 6) {
       const materials = [
         ...new Set(
           raw.parts
@@ -333,7 +337,10 @@ for (let n = 3; n <= e.api.unique.LAST_DAY_INDEX; n++) {
     assert(!rendered.has(raster), `Repeated rendered silhouette ${f}`);
     rendered.add(raster);
   });
-  if (n >= 7) {
+  if (n >= 6) {
+    assert(dailyRatios[0] >= 10);
+    assert(dailyRatios[3] <= 2.5);
+    assert(dailyRatios[4] <= 2.5);
     assert(dailyRatios.filter((ratio) => ratio <= 2.5).length >= 2);
     assert.equal(dailyRatios.filter((ratio) => ratio >= 10).length, 1);
     assert.equal(new Set(dailyLayouts).size, 5);
@@ -706,6 +713,21 @@ e.w.document.querySelector("#account-in").click();
 await new Promise((resolve) => setTimeout(resolve, 0));
 assert.equal(e.w.document.querySelector("#sht").textContent, "Sign in to sync");
 assert(e.w.document.querySelector('#signin-form input[type="email"]'));
+assert(e.w.document.querySelector('#signin-form input[type="password"]'));
+assert(e.w.document.querySelector("#google-in"));
+assert.equal(
+  e.w.document.querySelector("#signin-password").autocomplete,
+  "current-password",
+);
+e.w.document.querySelector('[data-auth-mode="signup"]').click();
+assert.equal(
+  e.w.document.querySelector("#signin-send").textContent,
+  "Create account",
+);
+assert.equal(
+  e.w.document.querySelector("#signin-password").autocomplete,
+  "new-password",
+);
 e.w.document.querySelector("#xs").click();
 ok("Home exposes Home, Archive, You and How to play; no practice action");
 // Archive resumes after midnight must not count as today's completion.

@@ -15,6 +15,7 @@ import { home } from "./home";
 import { start } from "./game";
 import { end } from "./end";
 import { LAST_DAY_INDEX } from "./unique";
+import { account, sendSignInLink, signOut } from "./auth";
 
 export const navBtns = () =>
   `<nav class="primary-nav" aria-label="Main">${ib("hm", "home", "Home")}${ib("ar", "archive", "Archive")}${ib("me", "user", "You")}${ib("hp", "help", "How to play")}</nav>`;
@@ -68,6 +69,51 @@ const sw = (
 ) =>
   `<label class="sw"><span><b>${label}</b><small>${hint}</small></span><input type="checkbox" role="switch" data-k="${name}"${on ? " checked" : ""}${off ? " disabled" : ""}></label>`;
 
+const esc = (value: string) =>
+  value.replace(
+    /[&<>"']/g,
+    (char) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        char
+      ]!,
+  );
+
+function accountCard() {
+  if (!account.configured)
+    return `<div class="you-local"><b>Saved on this device</b><p class="mute small">Play without an account. Your streak and results stay in this browser.</p></div>`;
+  if (account.loading)
+    return `<div class="you-local"><b>Checking your account…</b></div>`;
+  if (account.email)
+    return `<div class="you-local account-row"><span><b>${esc(account.email)}</b><small class="mute">${account.error || (account.synced ? "Synced across devices" : "Syncing…")}</small></span><button class="text-btn" id="account-out">Sign out</button></div>`;
+  return `<div class="you-local account-row"><span><b>Play without an account</b><small class="mute">Sign in only if you want your results on every device.</small></span><button class="btn account-button" id="account-in">Sign in to sync</button></div>`;
+}
+
+function signIn() {
+  track("sign_in_open", {});
+  const dl = sheet(
+    "Sign in to sync",
+    `<form class="signin" id="signin-form"><p class="mute">Enter your email and we’ll send you a sign-in link. No password.</p><label><span>Email</span><input id="signin-email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" placeholder="you@example.com" required></label><button class="btn" id="signin-send" type="submit">Send sign-in link</button><p class="small" id="signin-status" role="status"></p></form>`,
+  );
+  const form = dl.querySelector<HTMLFormElement>("#signin-form")!;
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const email = dl.querySelector<HTMLInputElement>("#signin-email")!;
+    const button = dl.querySelector<HTMLButtonElement>("#signin-send")!;
+    const status = dl.querySelector<HTMLElement>("#signin-status")!;
+    button.disabled = true;
+    button.textContent = "Sending…";
+    const error = await sendSignInLink(email.value.trim());
+    if (error) {
+      status.textContent = error;
+      button.disabled = false;
+      button.textContent = "Send sign-in link";
+      return;
+    }
+    form.innerHTML = `<div class="signin-sent"><b>Check your email</b><p class="mute">Open the link to sign in and sync your Pinpoise results.</p></div>`;
+    track("sign_in_link_sent", {});
+  };
+}
+
 function help() {
   track("help_open", {});
   sheet(
@@ -94,7 +140,7 @@ function you() {
   track("you_open", { played: n });
   const dl = sheet(
     "You",
-    `<div class="you-local"><b>Saved on this device</b><p class="mute small">Play without an account. Your streak and results stay in this browser.</p></div>
+    `${accountCard()}
     <section class="sheet-section"><div class="sheet-section-head"><h3>Stats</h3></div>
     <div class="stats"><div><b>${n}</b><span>Played</span></div><div><b>${streakNow()}</b><span>Streak</span></div><div><b>${avg}</b><span>Average</span></div><div><b>${db.best}</b><span>Best</span></div></div>
     ${n ? `<div class="dist">${GRADES.map((g, i) => `<div class="bar"><span>${g[1]}</span><span class="trk"><i class="g${i}" style="width:${gc[i] ? Math.max(6, (gc[i] / mx) * 100) : 0}%"></i></span><b>${gc[i]}</b></div>`).join("")}</div>` : '<p class="mute small">Finish today’s puzzle to start your stats.</p>'}
@@ -126,6 +172,20 @@ function you() {
     <details class="keyboard"><summary>Keyboard controls</summary><p class="mute small">Arrow keys move the pin. Hold Shift for bigger steps. Enter or Space drops it.</p></details>`,
     "you-dialog",
   );
+  const accountIn = dl.querySelector<HTMLButtonElement>("#account-in");
+  if (accountIn)
+    accountIn.onclick = () => {
+      dl.close();
+      setTimeout(signIn, 0);
+    };
+  const accountOut = dl.querySelector<HTMLButtonElement>("#account-out");
+  if (accountOut)
+    accountOut.onclick = async () => {
+      accountOut.disabled = true;
+      await signOut();
+      dl.close();
+      setTimeout(you, 0);
+    };
   dl.querySelectorAll<HTMLInputElement>(".setl input").forEach(
     (i) =>
       (i.onchange = () => {

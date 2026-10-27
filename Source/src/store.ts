@@ -18,7 +18,7 @@ export interface Rec {
   d: string;
   at: number;
 }
-interface DB {
+export interface DB {
   days: Record<string, Rec>;
   streak: number;
   last: string;
@@ -190,6 +190,63 @@ export const save = () => {
     localStorage.setItem(KEY, JSON.stringify(db));
   } catch {}
 };
+
+export const syncSnapshot = (): DB => JSON.parse(JSON.stringify(db)) as DB;
+
+/** Merge an account save into this browser. The already-synced account wins same-day conflicts. */
+export function mergeSyncSave(value: unknown) {
+  if (!value || typeof value !== "object") return false;
+  const remote = value as Partial<DB>;
+  let changed = false;
+  if (remote.days && typeof remote.days === "object")
+    for (const [d, record] of Object.entries(remote.days))
+      if (date(d) && validRecord(record, d)) {
+        const next: Rec = {
+          ...record,
+          d,
+          m: d === TODAY && record.m === "daily" ? "daily" : "archive",
+        };
+        if (JSON.stringify(db.days[d]) !== JSON.stringify(next)) changed = true;
+        db.days[d] = next;
+        delete db.pg[d];
+      }
+  if (remote.pg && typeof remote.pg === "object")
+    for (const [d, rounds] of Object.entries(remote.pg))
+      if (
+        date(d) &&
+        !db.days[d] &&
+        !db.pg[d] &&
+        Array.isArray(rounds) &&
+        rounds.length <= RN &&
+        rounds.every(
+          (q) => q && points(q.pts) && pair(q.lp) && finite(q.cm) && q.cm >= 0,
+        )
+      ) {
+        db.pg[d] = rounds;
+        changed = true;
+      }
+  if (
+    remote.last &&
+    date(remote.last) &&
+    db.days[remote.last] &&
+    remote.last >= db.last
+  ) {
+    if (db.last !== remote.last || db.streak !== remote.streak) changed = true;
+    db.last = remote.last;
+    db.streak = Number.isInteger(remote.streak)
+      ? Math.max(
+          0,
+          Math.min(Number(remote.streak), Object.keys(db.days).length),
+        )
+      : db.streak;
+  }
+  if (Number.isInteger(remote.max))
+    db.max = Math.max(db.max, db.streak, Number(remote.max));
+  db.best = Math.max(0, ...Object.values(db.days).map((record) => record.tot));
+  if (changed) save();
+  return changed;
+}
+
 export const streakNow = () =>
   db.last === TODAY || db.last === YEST ? db.streak : 0;
 export const playedCount = () => Object.keys(db.days).length;

@@ -18,6 +18,12 @@ import { home } from "./home";
 import { geo, view, sprite, pin } from "./stage";
 import { build, famsFor, scoreOf, scoreOf2 } from "./gen";
 import { swing, step } from "./physics";
+import { initAccount } from "./auth";
+
+void initAccount();
+addEventListener("pinpoise:sync", () => {
+  if (ui.ph === "home") home();
+});
 
 track("landing", {
   puzzle: dnOf(TODAY) + 1,

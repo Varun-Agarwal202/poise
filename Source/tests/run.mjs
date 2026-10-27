@@ -4,7 +4,7 @@ import { createCanvas } from "@napi-rs/canvas";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom'; export * as rank from './src/rank';`;
+const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom'; export * as rank from './src/rank'; export * as auth from './src/auth';`;
 const compiled = await bundle({
   stdin: { contents: entry, resolveDir: process.cwd(), loader: "ts" },
   bundle: true,
@@ -17,11 +17,25 @@ const compiled = await bundle({
     "import.meta.env.VITE_POSTHOG_KEY": "undefined",
     "import.meta.env.VITE_POSTHOG_HOST": "undefined",
     "import.meta.env.VITE_SITE_URL": "undefined",
+    "import.meta.env.VITE_SUPABASE_URL": '"https://test.supabase.co"',
+    "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": '"test-key"',
   },
   plugins: [
     {
       name: "image-capture-test",
       setup(b) {
+        b.onResolve({ filter: /^@supabase\/supabase-js$/ }, () => ({
+          path: "supabase-client",
+          namespace: "test",
+        }));
+        b.onLoad({ filter: /^supabase-client$/, namespace: "test" }, () => ({
+          contents: `export const createClient = () => ({ auth: {
+              getSession: async () => ({ data: { session: null } }),
+              onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+              signInWithOtp: async () => ({ error: null }),
+              signOut: async () => ({ error: null })
+            }});`,
+        }));
         b.onResolve({ filter: /^html-to-image$/ }, () => ({
           path: "image-capture",
           namespace: "test",
@@ -136,6 +150,7 @@ function ok(label) {
 }
 const e = env(),
   { gen, legacy, store } = e.api;
+await e.api.auth.initAccount();
 assert.equal(e.api.dom.GRADES[e.api.dom.gi(gen.scoreOf2(1.1))][1], "Excellent");
 assert.equal(
   e.api.dom.GRADES[e.api.dom.gi(gen.scoreOf2(1.4))][1],
@@ -144,18 +159,24 @@ assert.equal(
 assert.equal(e.api.dom.GRADES[e.api.dom.gi(33)][1], "Off center");
 ok("Accuracy labels follow the steep scoring curve");
 assert.equal(
-  e.api.rank.rankLabel({
-    betterThan: 81,
-    players: 42,
-    bins: Array(20).fill(1),
-  }),
+  e.api.rank.rankLabel(
+    {
+      betterThan: 81,
+      players: 42,
+      bins: Array(20).fill(1),
+    },
+    390,
+  ),
   "Better than 81% of today’s players",
 );
 assert.equal(
-  e.api.rank.rankLabel({ betterThan: 50, players: 4, bins: Array(20).fill(0) }),
-  "4 players today",
+  e.api.rank.rankLabel(
+    { betterThan: 50, players: 4, bins: Array(20).fill(0) },
+    408,
+  ),
+  "Top 5%",
 );
-ok("Live rank labels wait for a useful sample");
+ok("Live ranks use a conservative fallback until the sample is useful");
 for (let n = 0; n < 3; n++) {
   const d = store.dateOfNo(n + 1),
     p = store.puzzleOf(d);
@@ -260,7 +281,10 @@ function renderedKey(raw) {
         alpha[i] = rgba[i * 4 + 3] > 127 ? 255 : 0;
       hashes.push(createHash("sha256").update(alpha).digest("hex"));
     }
-  return hashes.sort()[0];
+  const result = hashes.sort()[0];
+  original.width = 1;
+  original.height = 1;
+  return result;
 }
 const seen = new Set(),
   contours = new Set(),
@@ -305,11 +329,14 @@ for (let n = 3; n <= e.api.unique.LAST_DAY_INDEX; n++) {
       uc.font = "11px sans-serif";
       uc.fillText(s.fam, x + 8, y + 56);
     }
+    s.sp._canvas.width = 1;
+    s.sp._canvas.height = 1;
   }
   assert.equal(
     JSON.stringify(p),
     JSON.stringify(store.puzzleOf(store.dateOfNo(n + 1))),
   );
+  if (n % 20 === 0) global.gc?.();
 }
 assert.equal(seen.size, 6000);
 assert.equal(contours.size, 6000);
@@ -519,7 +546,7 @@ assert.equal(
   e.w.document.querySelectorAll("#share-card .result-object canvas").length,
   5,
 );
-assert.equal(e.w.document.querySelector("#eh").textContent, "Your score");
+assert.match(e.w.document.querySelector("#eh").textContent, /^Top \d+%$/);
 assert.equal(e.w.document.querySelectorAll(".rank-curve").length, 2);
 assert(
   !e.w.document
@@ -532,6 +559,12 @@ assert.equal(store.db.streak, 1);
 ok(
   "Full daily run stores five rounds, renders five thumbnails and cannot replay",
 );
+const syncTarget = env("2026-10-25");
+assert(syncTarget.api.store.mergeSyncSave(store.syncSnapshot()));
+assert.equal(syncTarget.api.store.playedCount(), 1);
+assert.equal(syncTarget.api.store.db.days[store.TODAY].tot, rec.tot);
+syncTarget.close();
+ok("Account sync imports validated progress into a fresh browser");
 // Clipboard tests exercise async capture and write failures; real PNG rendering is browser-tested.
 const copyButton = e.w.document.querySelector("#copy-result");
 assert.equal(copyButton.textContent, "Copy image");
@@ -645,6 +678,11 @@ e.w.document.querySelector("#me").click();
 assert.equal(e.w.document.querySelector("#sht").textContent, "You");
 assert.equal(e.w.document.querySelectorAll(".stats > div").length, 4);
 assert(e.w.document.querySelector('input[name="theme"]'));
+assert(e.w.document.querySelector("#account-in"));
+e.w.document.querySelector("#account-in").click();
+await new Promise((resolve) => setTimeout(resolve, 0));
+assert.equal(e.w.document.querySelector("#sht").textContent, "Sign in to sync");
+assert(e.w.document.querySelector('#signin-form input[type="email"]'));
 e.w.document.querySelector("#xs").click();
 ok("Home exposes Home, Archive, You and How to play; no practice action");
 // Archive resumes after midnight must not count as today's completion.

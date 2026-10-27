@@ -54,6 +54,7 @@ import { snd, buzz } from "./audio";
 import { vsFor } from "./share";
 import { end } from "./end";
 import { navBtns, bindNav } from "./sheets";
+import { syncAccount } from "./auth";
 
 export type Phase = "home" | "aim" | "swing" | "result" | "end";
 export const ui = { ph: "home" as Phase };
@@ -593,6 +594,7 @@ function finish() {
     }
     delete db.pg[g.d];
     save();
+    void syncAccount();
   }
   if (g.m === "daily")
     track("daily_complete", {

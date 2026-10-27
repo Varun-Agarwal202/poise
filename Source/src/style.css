@@ -957,6 +957,54 @@ dialog::backdrop {
   padding: 16px 0 20px;
   border-bottom: 1px solid var(--line);
 }
+.account-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+.account-row > span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.account-row small {
+  font-size: 0.82rem;
+}
+.account-button {
+  min-height: 44px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+.signin {
+  display: grid;
+  gap: 20px;
+}
+.signin label {
+  display: grid;
+  gap: 8px;
+  font-weight: 800;
+}
+.signin input {
+  width: 100%;
+  min-height: 50px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--bg);
+  color: var(--ink);
+  padding: 10px 12px;
+  font-weight: 600;
+}
+.signin input:focus-visible {
+  border-color: var(--ink);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.signin-sent {
+  display: grid;
+  gap: 8px;
+  padding: 24px 0;
+}
 .sheet-section {
   display: grid;
   gap: 16px;
@@ -1237,6 +1285,12 @@ dialog::backdrop {
   }
   .sh {
     padding: 20px;
+  }
+  .account-row {
+    grid-template-columns: 1fr;
+  }
+  .account-button {
+    width: 100%;
   }
 }
 @media (max-width: 360px) {

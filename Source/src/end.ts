@@ -5,7 +5,14 @@ import { TODAY, noOf, fmtDate, untilNext, type Rec } from "./store";
 import { copyResult, copyText } from "./share";
 import { ui } from "./game";
 import { navBtns, bindNav } from "./sheets";
-import { rankLabel, submitRank, type RankData } from "./rank";
+import {
+  fallbackBins,
+  fallbackRank,
+  rankLabel,
+  REAL_RANK_MINIMUM,
+  submitRank,
+  type RankData,
+} from "./rank";
 import { track } from "./analytics";
 
 const siteHost = (
@@ -45,12 +52,14 @@ function distribution(total: number, bins: number[] = Array(20).fill(0)) {
 }
 
 function applyRank(rec: Rec, rank: RankData) {
-  const label = rankLabel(rank);
+  const real = rank.players >= REAL_RANK_MINIMUM,
+    label = rankLabel(rank, rec.tot),
+    bins = real ? rank.bins : fallbackBins();
   document.querySelectorAll<HTMLElement>(".rank-pill").forEach((el) => {
     el.textContent = label;
   });
   document.querySelectorAll<SVGElement>(".rank-curve").forEach((el) => {
-    el.outerHTML = distribution(rec.tot, rank.bins);
+    el.outerHTML = distribution(rec.tot, bins);
   });
   setTitle(`${rec.tot}/500 · ${label}`);
   track("rank_received", {
@@ -66,16 +75,17 @@ export function end(rec: Rec, isNew: boolean) {
   app.className = "result-screen";
   const rs = build(rec.seed, rec.fams),
     names = rs.map((s) => s.name),
-    waiting = "Checking scores";
+    waiting = fallbackRank(rec.tot),
+    startingBins = fallbackBins();
   app.innerHTML = `<section id="result-sheet" aria-label="Your results">
     <header class="receipt-heading site-header"><span class="wordmark">Pinpoise</span><div data-copy-exclude>${navBtns()}</div></header>
-    <div class="result-summary"><div class="rank-summary"><p class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</p><h1 class="rank-pill" id="eh" tabindex="-1">${waiting}</h1>${distribution(rec.tot)}${isNew ? '<p class="mute small">Personal best</p>' : ""}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
+    <div class="result-summary"><div class="rank-summary"><p class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</p><h1 class="rank-pill" id="eh" tabindex="-1">${waiting}</h1>${distribution(rec.tot, startingBins)}${isNew ? '<p class="mute small">Personal best</p>' : ""}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
     <div class="result-objects">${objects(rec, names, dpr)}</div>
     <div class="receipt-footer"><span class="pin-key"><i class="key-player"></i>Your pin <i class="key-target"></i>Balance point</span></div>
   </section>
   <div id="share-card" class="share-card" aria-hidden="true">
     <div class="share-top"><span class="wordmark">Pinpoise</span><span class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</span></div>
-    <div class="share-score"><div class="share-rank"><p class="share-tier rank-pill">${waiting}</p>${distribution(rec.tot)}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
+    <div class="share-score"><div class="share-rank"><p class="share-tier rank-pill">${waiting}</p>${distribution(rec.tot, startingBins)}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
     <div class="result-objects">${objects(rec, names, 2)}</div>
     <div class="share-foot"><span class="pin-key"><i class="key-player"></i>Your pin <i class="key-target"></i>Balance point</span><span>${siteHost}</span></div>
   </div>
@@ -94,9 +104,5 @@ export function end(rec: Rec, isNew: boolean) {
   void submitRank(rec).then((rank) => {
     if (ui.ph !== "end" || !document.querySelector("#result-sheet")) return;
     if (rank) applyRank(rec, rank);
-    else
-      document.querySelectorAll<HTMLElement>(".rank-pill").forEach((el) => {
-        el.textContent = "Your score";
-      });
   });
 }

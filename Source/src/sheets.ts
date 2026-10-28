@@ -238,9 +238,9 @@ function help() {
       <li>A near miss tips a little. A wide miss swings. Distance decides your score, not how much it moves.</li>
     </ol>
     <h3>Pinpoise 3D</h3>
-    <p class="mute small">Three objects a day. Drag to rotate, then tap a visible surface to place the pin. The object can tip in any direction.</p>
-    <p class="mute small">Arrow keys move the pin. Shift for bigger steps. Enter or Space drops it. On a phone, drag for a magnified view.</p>
-    <p class="mute small">Scores and your streak stay on this device. Sign in only if you want them synced.</p>`,
+    <p class="mute small">Three objects a day. Choose <b>Rotate</b> and drag the object until the surface you want faces you. Then choose <b>Place pin</b> and tap or drag across that surface.</p>
+    <p class="mute small">Press R or P to switch tools. In Rotate, the arrow keys turn the object. In Place pin, the arrow keys move the cursor and Enter or Space places it. Use <b>Drop pin</b> when you are ready.</p>
+    <p class="mute small">Your original game scores and streak can sync when you sign in. 3D progress currently stays on this device.</p>`,
   );
 }
 

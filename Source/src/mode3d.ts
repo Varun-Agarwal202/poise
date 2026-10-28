@@ -144,6 +144,36 @@ const qnorm = (q: Q): Q => {
     return qnorm([c[0], c[1], c[2], 1 + d]);
   };
 
+/** Maps a screen point onto a virtual sphere centered on the canvas. */
+export function trackballPoint(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): V3 {
+  const radius = Math.max(1, Math.min(width, height) * 0.46),
+    px = (x - width / 2) / radius,
+    py = (height / 2 - y) / radius,
+    distance = Math.hypot(px, py);
+  if (distance >= 1) return [px / distance, py / distance, 0];
+  return [px, py, Math.sqrt(1 - px * px - py * py)];
+}
+
+/** Returns the camera-space rotation produced by one trackball drag. */
+export function trackballRotation(
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  width: number,
+  height: number,
+): Q {
+  return qfrom(
+    trackballPoint(fromX, fromY, width, height),
+    trackballPoint(toX, toY, width, height),
+  );
+}
+
 function load3D(): Save3D {
   try {
     const value = JSON.parse(localStorage.getItem(KEY) || "null");
@@ -759,10 +789,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       dy = y - down.y;
     if (Math.hypot(dx, dy) > 5) down.moved = true;
     if (down.moved) {
-      q = qmul(
-        qaxis([1, 0, 0], dy * 0.009),
-        qmul(qaxis([0, 1, 0], dx * 0.009), down.q),
-      );
+      q = qmul(trackballRotation(down.x, down.y, x, y, W, H), down.q);
       renderedFaces = [];
       setHint(
         pinLocal

@@ -53,6 +53,7 @@ Restored from the original palette after the warm direction was rejected.
 - Account and settings use separate right-side panels and separate tool-rail actions.
 - Pinpoise 3D inherits the same neutral palette and instrument controls. Depth comes from projected geometry, face shading, and physical rotation rather than gradients or decorative effects.
 - Pinpoise 3D keeps Rotate and Place pin as explicit tools. A placed pin follows the chosen face normal so its depth is visible.
+- Pinpoise 3D rotation uses a virtual trackball. Drag direction follows the pointer from the object center without inertial drift or fixed-axis stacking.
 
 ## Guardrails
 

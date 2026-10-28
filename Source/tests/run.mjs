@@ -514,6 +514,15 @@ for (let cm = 0; cm <= 20; cm += 0.1) {
   score3dPrevious = score;
 }
 assert.equal(mode3d.score3D(0), 100);
+const trackballCenter = mode3d.trackballPoint(200, 150, 400, 300),
+  trackballEdge = mode3d.trackballPoint(400, 150, 400, 300),
+  dragRight = mode3d.trackballRotation(200, 150, 300, 150, 400, 300),
+  dragLeft = mode3d.trackballRotation(200, 150, 100, 150, 400, 300);
+assert.equal(trackballCenter.join(","), "0,0,1");
+assert(Math.abs(Math.hypot(...trackballEdge) - 1) < 1e-12);
+assert(dragRight[1] > 0);
+assert(dragLeft[1] < 0);
+assert(Math.abs(Math.hypot(...dragRight) - 1) < 1e-12);
 const set3dA = mode3d.make3DSet("2026-10-27"),
   set3dB = mode3d.make3DSet("2026-10-27");
 assert.equal(set3dA.length, 3);

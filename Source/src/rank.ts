@@ -7,8 +7,8 @@ export interface RankData {
 }
 
 const PLAYER_KEY = "pinpoise:player";
-export const REAL_RANK_MINIMUM = 20;
-export const USE_LIVE_RANKS = false;
+export const REAL_RANK_MINIMUM = 100;
+export const USE_LIVE_RANKS = true;
 const FALLBACK_CENTER = 350;
 const FALLBACK_SPREAD = 70;
 const TOP_PERCENT_ANCHORS: [score: number, top: number][] = [
@@ -82,7 +82,7 @@ function validRank(value: unknown): value is RankData {
   );
 }
 
-/** Submit one anonymous score per browser and puzzle, then return the live distribution. */
+/** Submit one anonymous score per browser and puzzle, then return the global distribution. */
 export async function submitRank(rec: Rec): Promise<RankData | null> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 5000);
@@ -111,5 +111,5 @@ export async function submitRank(rec: Rec): Promise<RankData | null> {
 export function rankLabel(rank: RankData, total: number) {
   if (!USE_LIVE_RANKS || rank.players < REAL_RANK_MINIMUM)
     return fallbackRank(total);
-  return `Better than ${rank.betterThan}% of today’s players`;
+  return `Top ${Math.max(1, 100 - rank.betterThan)}%`;
 }

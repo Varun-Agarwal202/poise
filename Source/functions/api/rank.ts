@@ -1,3 +1,5 @@
+import { modelScoreDistribution } from "../../src/rank-model";
+
 interface D1Result<T> {
   results?: T[];
 }
@@ -89,31 +91,19 @@ export async function onRequestPost({ request, env }: Context) {
     .bind(body.puzzle, playerHash, body.score, Date.now())
     .run();
 
-  const summary = await env.SCORES.prepare(
-    "SELECT COUNT(*) AS players, SUM(CASE WHEN score < ? THEN 1 ELSE 0 END) AS lower, SUM(CASE WHEN score = ? THEN 1 ELSE 0 END) AS tied FROM scores WHERE puzzle = ?",
-  )
-    .bind(body.score, body.score, body.puzzle)
-    .first<{ players: number; lower: number; tied: number }>();
   const distribution = await env.SCORES.prepare(
-    "SELECT CASE WHEN score = 500 THEN 19 ELSE CAST(score / 25 AS INTEGER) END AS bucket, COUNT(*) AS amount FROM scores WHERE puzzle = ? GROUP BY bucket ORDER BY bucket",
-  )
-    .bind(body.puzzle)
-    .all<{ bucket: number; amount: number }>();
-
-  const players = Number(summary?.players || 1);
-  const lower = Number(summary?.lower || 0);
-  const tied = Number(summary?.tied || 1);
-  const betterThan = Math.max(
-    1,
-    Math.min(99, Math.round(((lower + tied * 0.5) / players) * 100)),
+    "SELECT score, COUNT(*) AS amount FROM scores GROUP BY score ORDER BY score",
+  ).all<{ score: number; amount: number }>();
+  const modeled = modelScoreDistribution(
+    distribution.results || [],
+    Number(body.score),
   );
-  const bins = Array(20).fill(0) as number[];
-  for (const row of distribution.results || []) {
-    const bucket = Number(row.bucket);
-    if (bucket >= 0 && bucket < bins.length) bins[bucket] = Number(row.amount);
-  }
 
-  return json({ betterThan, players, bins });
+  return json({
+    betterThan: modeled.betterThan,
+    players: modeled.samples,
+    bins: modeled.bins,
+  });
 }
 
 export const onRequestGet = () => json({ error: "Use POST" }, 405);

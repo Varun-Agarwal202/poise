@@ -4,7 +4,7 @@ import { createCanvas } from "@napi-rs/canvas";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom'; export * as rank from './src/rank'; export * as auth from './src/auth'; export * as mode3d from './src/mode3d';`;
+const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom'; export * as rank from './src/rank'; export * as rankModel from './src/rank-model'; export * as auth from './src/auth'; export * as mode3d from './src/mode3d';`;
 const compiled = await bundle({
   stdin: { contents: entry, resolveDir: process.cwd(), loader: "ts" },
   bundle: true,
@@ -176,6 +176,13 @@ assert.equal(
 );
 assert.equal(
   e.api.rank.rankLabel(
+    { betterThan: 81, players: 250, bins: Array(20).fill(1) },
+    390,
+  ),
+  "Top 19%",
+);
+assert.equal(
+  e.api.rank.rankLabel(
     { betterThan: 50, players: 4, bins: Array(20).fill(0) },
     408,
   ),
@@ -185,7 +192,33 @@ assert.equal(e.api.rank.fallbackRank(450), "Top 9%");
 assert.equal(e.api.rank.fallbackRank(475), "Top 4%");
 assert.equal(e.api.rank.fallbackRank(490), "Top 2%");
 assert.equal(e.api.rank.fallbackRank(500), "Top 1%");
-ok("Ranks use the balanced reference curve while live ranks are paused");
+const sampleDistribution = [
+  { score: 100, amount: 5 },
+  { score: 240, amount: 40 },
+  { score: 330, amount: 85 },
+  { score: 400, amount: 80 },
+  { score: 470, amount: 40 },
+];
+const modeledLow = e.api.rankModel.modelScoreDistribution(
+    sampleDistribution,
+    1,
+  ),
+  modeledMin = e.api.rankModel.modelScoreDistribution(sampleDistribution, 100),
+  modeledMiddle = e.api.rankModel.modelScoreDistribution(
+    sampleDistribution,
+    350,
+  ),
+  modeledPerfect = e.api.rankModel.modelScoreDistribution(
+    sampleDistribution,
+    500,
+  );
+assert.equal(modeledLow.betterThan, 1);
+assert(modeledMin.betterThan > modeledLow.betterThan);
+assert(modeledMiddle.betterThan > modeledMin.betterThan);
+assert.equal(modeledPerfect.betterThan, 99);
+assert.equal(modeledMiddle.samples, 250);
+assert.equal(modeledMiddle.bins.length, 20);
+ok("Global ranks smooth missing scores and stay anchored at 0 and 500");
 for (let n = 0; n < 3; n++) {
   const d = store.dateOfNo(n + 1),
     p = store.puzzleOf(d);

@@ -28,6 +28,12 @@ export const vsFor = (d: string) => (CH && CH.d === d ? CH : null);
 let resetLabel = 0;
 let resetText = 0;
 
+export interface Share3DItem {
+  pts: number;
+  cm: number;
+  name: string;
+}
+
 /** Squares by grade: 90+, 70+, 45+, 20+, else. */
 const SQUARES = [
   "\u{1f7e9}",
@@ -74,6 +80,47 @@ export async function copyText(r: Rec) {
   }
 }
 
+export function share3DText(results: Share3DItem[], d = TODAY) {
+  const site = (
+      (import.meta.env.VITE_SITE_URL as string | undefined) ||
+      "https://poisedaily.com"
+    ).replace(/\/$/, ""),
+    total = results.reduce((sum, result) => sum + result.pts, 0),
+    lines = [
+      `Pinpoise 3D No. ${noOf(d)}  ${total}/300`,
+      results.map((result) => SQUARES[gi(result.pts)]).join(""),
+    ];
+  if (site) lines.push(site);
+  return lines.join("\n");
+}
+
+export async function copy3DText(results: Share3DItem[], d = TODAY) {
+  const button = document.querySelector<HTMLButtonElement>("#copy-text"),
+    status = document.querySelector<HTMLElement>("#copy-status");
+  if (!button || !status || button.disabled) return;
+  clearTimeout(resetText);
+  status.textContent = "";
+  button.disabled = true;
+  const ok = await copy(share3DText(results, d));
+  if (!button.isConnected) return;
+  button.disabled = false;
+  if (ok) {
+    button.textContent = "Copied";
+    say("3D result text copied. Ready to paste.");
+    track("share", {
+      method: "3d_text_copy",
+      total: results.reduce((sum, result) => sum + result.pts, 0),
+      puzzle: noOf(d),
+    });
+    resetText = window.setTimeout(() => {
+      if (button.isConnected) button.textContent = "Copy text";
+    }, 2400);
+  } else {
+    status.textContent =
+      "Couldn’t copy the text. Select it and copy it yourself.";
+  }
+}
+
 /** One click copies the visible results as PNG, with no dialog or download fallback. */
 export async function copyResult(r: Rec) {
   const source = document.querySelector<HTMLElement>("#share-card");
@@ -111,6 +158,49 @@ export async function copyResult(r: Rec) {
     button.textContent = "Copied";
     say("Result image copied. Ready to paste.");
     track("share", { method: "image_copy", total: r.tot, puzzle: noOf(r.d) });
+    resetLabel = window.setTimeout(() => {
+      if (button.isConnected) button.textContent = "Copy image";
+    }, 2400);
+  } catch {
+    if (!button.isConnected) return;
+    button.textContent = "Copy image";
+    status.textContent =
+      "Couldn’t copy the image. Allow clipboard access in your browser, then try again.";
+  } finally {
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+  }
+}
+
+export async function copy3DResult(results: Share3DItem[], d = TODAY) {
+  const button = document.querySelector<HTMLButtonElement>("#copy-result"),
+    status = document.querySelector<HTMLElement>("#copy-status");
+  if (!button || !status || button.disabled) return;
+  clearTimeout(resetLabel);
+  status.textContent = "";
+  if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+    status.textContent =
+      "This browser can’t copy images. Use Copy text, or open Pinpoise in Safari, Chrome or Edge.";
+    return;
+  }
+  button.disabled = true;
+  button.textContent = "Copying…";
+  button.setAttribute("aria-busy", "true");
+  try {
+    const png = (async () => {
+      await document.fonts.ready;
+      return paint3DShare(results, d);
+    })();
+    void png.catch(() => {});
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+    if (!button.isConnected) return;
+    button.textContent = "Copied";
+    say("3D result image copied. Ready to paste.");
+    track("share", {
+      method: "3d_image_copy",
+      total: results.reduce((sum, result) => sum + result.pts, 0),
+      puzzle: noOf(d),
+    });
     resetLabel = window.setTimeout(() => {
       if (button.isConnected) button.textContent = "Copy image";
     }, 2400);
@@ -334,5 +424,117 @@ export async function paintShare(source: HTMLElement): Promise<Blob> {
   ctx.fillText("Balance point", fx, mid + 4);
   ctx.fillText(site, CARD_W - padX - ctx.measureText(site).width, mid + 4);
 
+  return blobOf(cv);
+}
+
+function drawVoxelMark(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  ink: string,
+) {
+  const h = size * 0.52,
+    w = size * 0.8;
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(x, y - h);
+  ctx.lineTo(x + w, y - h / 2);
+  ctx.lineTo(x + w, y + h / 2);
+  ctx.lineTo(x, y + h);
+  ctx.lineTo(x - w, y + h / 2);
+  ctx.lineTo(x - w, y - h / 2);
+  ctx.closePath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x, y + h);
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + w, y - h / 2);
+  ctx.moveTo(x, y);
+  ctx.lineTo(x - w, y - h / 2);
+  ctx.stroke();
+}
+
+export async function paint3DShare(
+  results: Share3DItem[],
+  d = TODAY,
+): Promise<Blob> {
+  const bg = css("--bg") || "#eceef2",
+    ink = css("--ink") || "#171a21",
+    mute = css("--mute") || "#5f6674",
+    line = css("--line") || "#cdd2db",
+    total = results.reduce((sum, result) => sum + result.pts, 0),
+    h = 480,
+    pad = 48,
+    cv = document.createElement("canvas");
+  cv.width = CARD_W * SCALE;
+  cv.height = h * SCALE;
+  const ctx = cv.getContext("2d");
+  if (!ctx) throw new Error("Image capture returned no data");
+  ctx.scale(SCALE, SCALE);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, CARD_W, h);
+  ctx.textBaseline = "alphabetic";
+
+  drawVoxelMark(ctx, pad + 15, 52, 16, ink);
+  ctx.fillStyle = ink;
+  ctx.font = `800 28px ${FACE}`;
+  drawText(ctx, "Pinpoise 3D", pad + 48, 62, -0.045);
+  ctx.fillStyle = mute;
+  ctx.font = `600 14px ${FACE}`;
+  drawText(ctx, `No. ${noOf(d)}`, CARD_W - pad, 58, 0.04, "right");
+
+  ctx.fillStyle = ink;
+  ctx.font = `800 92px ${FACE}`;
+  drawText(ctx, String(total), pad, 168, -0.045);
+  const totalW = ctx.measureText(String(total)).width;
+  ctx.fillStyle = mute;
+  ctx.font = `600 16px ${FACE}`;
+  ctx.fillText("/ 300", pad + totalW + 10, 158);
+
+  const rowTop = 208,
+    rowH = 66,
+    barX = 310,
+    barW = 250;
+  results.forEach((result, i) => {
+    const y = rowTop + i * rowH;
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad, y);
+    ctx.lineTo(CARD_W - pad, y);
+    ctx.stroke();
+
+    ctx.fillStyle = mute;
+    ctx.font = `600 13px ${FACE}`;
+    ctx.fillText(String(i + 1), pad, y + 39);
+    ctx.fillStyle = ink;
+    ctx.font = `700 17px ${FACE}`;
+    ctx.fillText(result.name, pad + 30, y + 30);
+    ctx.fillStyle = mute;
+    ctx.font = `600 12px ${FACE}`;
+    ctx.fillText(`${result.cm.toFixed(1)} cm`, pad + 30, y + 49);
+
+    ctx.fillStyle = line;
+    ctx.fillRect(barX, y + 29, barW, 8);
+    ctx.fillStyle = css(`--k${gi(result.pts)}`) || ink;
+    ctx.fillRect(barX, y + 29, (barW * result.pts) / 100, 8);
+    ctx.fillStyle = ink;
+    ctx.font = `800 22px ${FACE}`;
+    drawText(ctx, String(result.pts), CARD_W - pad, y + 42, 0, "right");
+  });
+
+  const footerY = rowTop + results.length * rowH + 28;
+  ctx.strokeStyle = line;
+  ctx.beginPath();
+  ctx.moveTo(pad, footerY - 18);
+  ctx.lineTo(CARD_W - pad, footerY - 18);
+  ctx.stroke();
+  ctx.fillStyle = mute;
+  ctx.font = `600 13px ${FACE}`;
+  ctx.fillText("Three objects. One pin each.", pad, footerY + 8);
+  const site = "poisedaily.com";
+  drawText(ctx, site, CARD_W - pad, footerY + 8, 0, "right");
   return blobOf(cv);
 }

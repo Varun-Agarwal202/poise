@@ -52,6 +52,7 @@ Restored from the original palette after the warm direction was rejected.
 - Main actions use squared instrument controls, not generic pill buttons.
 - Account and settings use separate right-side panels and separate tool-rail actions.
 - Pinpoise 3D inherits the same neutral palette and instrument controls. Depth comes from projected geometry, face shading, and physical rotation rather than gradients or decorative effects.
+- Pinpoise 3D keeps Rotate and Place pin as explicit tools. A placed pin follows the chosen face normal so its depth is visible.
 
 ## Guardrails
 
@@ -69,6 +70,7 @@ Restored from the original palette after the warm direction was rejected.
 - Do not expose generated-sounding daily modifier names.
 - Do not add motion that competes with the wobble physics.
 - Keep the object canvas visually dominant.
+- Pause 3D rendering whenever the object is idle. Resume only for input, resize or drop motion.
 
 ## 2026-10-27 accounts
 

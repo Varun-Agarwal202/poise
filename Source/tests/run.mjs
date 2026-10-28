@@ -142,6 +142,7 @@ function env(date = "2026-10-25", save, live) {
       const work = callbacks;
       callbacks = [];
       work.forEach((f) => f(w.performance.now() + 100));
+      return work.length;
     },
     close() {
       w.close();
@@ -501,8 +502,15 @@ const play3d = env(play3dDate);
 play3d.api.mode3d.start3D();
 assert(play3d.w.document.querySelector(".stage3"));
 assert.equal(play3d.w.document.querySelectorAll(".density3 > span").length, 2);
+assert.equal(play3d.frame(), 1);
+assert.equal(play3d.frame(), 0);
 const canvas3d = play3d.w.document.querySelector("#cv3"),
   drop3d = play3d.w.document.querySelector("#drop3");
+play3d.w.document.querySelector("#pin3").click();
+assert.equal(
+  play3d.w.document.querySelector("#pin3").getAttribute("aria-pressed"),
+  "true",
+);
 canvas3d.dispatchEvent(
   new play3d.w.KeyboardEvent("keydown", { key: "Enter", cancelable: true }),
 );
@@ -517,7 +525,29 @@ assert(
     .textContent.includes("Object 2 of 3"),
 );
 play3d.close();
-ok("Pinpoise 3D supports keyboard pinning, drop physics and round progression");
+ok(
+  "Pinpoise 3D has separate tools, idles between input, and supports keyboard play",
+);
+
+const result3d = env(play3dDate);
+const sample3d = [
+  { name: "Comet", cm: 0.8, pts: 92 },
+  { name: "Arch", cm: 2.1, pts: 71 },
+  { name: "Bot", cm: 4.4, pts: 48 },
+];
+result3d.api.mode3d.finish3D(sample3d);
+assert(result3d.w.document.querySelector("#copy-result"));
+assert(result3d.w.document.querySelector("#copy-text"));
+assert.match(
+  result3d.api.sharing.share3DText(sample3d, play3dDate),
+  /211\/300/,
+);
+assert.equal(
+  (await result3d.api.sharing.paint3DShare(sample3d, play3dDate)).type,
+  "image/png",
+);
+result3d.close();
+ok("Pinpoise 3D results can be shared as text or a rendered image");
 
 const frame = { B: 400, o: { x: 0, y: 0 }, c: { x: 200, y: 200 } };
 const simulate = (P, hz = 60) => {

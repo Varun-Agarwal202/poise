@@ -6,6 +6,7 @@ import { ui } from "./game";
 import { navBtns, bindNav } from "./sheets";
 import { track } from "./analytics";
 import { snd, buzz } from "./audio";
+import { copy3DResult, copy3DText } from "./share";
 
 type V3 = [number, number, number];
 type Q = [number, number, number, number];
@@ -23,7 +24,7 @@ export interface Shape3D {
   extent: number;
 }
 
-interface Result3D {
+export interface Result3D {
   pts: number;
   cm: number;
   name: string;
@@ -347,11 +348,37 @@ export const threeDStatus = () => ({
 });
 
 interface FaceDraw {
+  id: number;
   pts: [number, number][];
   local: V3[];
   depth: number;
   normal: V3;
-  color: string;
+  normalLocal: V3;
+  rgb: number[];
+}
+
+interface SurfaceFace {
+  id: number;
+  local: V3[];
+  normal: V3;
+  rgb: number[];
+}
+
+function exposedFaces(shape: Shape3D): SurfaceFace[] {
+  const occupied = new Set(shape.voxels.map((voxel) => voxel.p.join(","))),
+    out: SurfaceFace[] = [];
+  for (const voxel of shape.voxels)
+    for (const face of FACE_DIRS) {
+      if (occupied.has(add(voxel.p, face.n).join(","))) continue;
+      const hex = MAT[voxel.mat][0]!.replace("#", "");
+      out.push({
+        id: out.length,
+        local: face.v.map((point) => add(voxel.p, point)),
+        normal: face.n,
+        rgb: [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)),
+      });
+    }
+  return out;
 }
 
 let cleanup3d: (() => void) | null = null;
@@ -376,15 +403,15 @@ export function start3D() {
 
 function playRound(set: Shape3D[], results: Result3D[]) {
   const round = results.length,
-    shape = set[round];
+    shape = set[round],
+    surfaces = exposedFaces(shape);
   if (!shape) return finish3D(results);
   app.className = "mode3d-screen";
   app.innerHTML = `<header class="site-header"><button class="wordmark brand-home" id="brand-home" type="button" aria-label="Home">Pinpoise</button>${navBtns()}</header>
     <div class="round-header"><span class="mute">Pinpoise 3D / Object ${round + 1} of ${RN3}</span><span class="dots">${Array.from({ length: RN3 }, (_, i) => `<i class="${i < round ? `g${gi(results[i].pts)}` : ""}"></i>`).join("")}</span><span class="running-total"><span class="mute">Total</span> <b>${results.reduce((sum, result) => sum + result.pts, 0)}</b><span class="mute"> / 300</span></span></div>
-    <div class="stage3" id="stage3"><canvas id="cv3" tabindex="0" aria-label="Rotatable three-dimensional object. Drag to rotate. Tap a visible face to place the pin."></canvas></div>
+    <div class="stage3 tool-rotate" id="stage3"><canvas id="cv3" tabindex="0" aria-label="Three-dimensional object. Use Rotate to choose a view, then Place pin to mark a visible surface."></canvas><div class="stage3-tools" role="toolbar" aria-label="3D controls"><button type="button" id="rotate3" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 8.5A8 8 0 0 1 18.6 6L20 7.5M19.2 15.5A8 8 0 0 1 5.4 18L4 16.5"/><path d="M20 3.5v4h-4M4 20.5v-4h4"/></svg><span>Rotate</span></button><button type="button" id="pin3" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6" r="3"/><path d="M12 9v10M9 19h6"/></svg><span>Place pin</span></button></div></div>
     <div class="foot foot3" id="foot3"><div class="object-heading"><div><h1 class="lede">${shape.name}</h1><p class="mute small">Rotate it. Pin a surface above the center of mass.</p></div>${materialLegend(shape)}</div>
-      <p class="small rule">Density is mass per cube. Depth counts.</p>
-      <span class="mute small" id="hint3">Drag to rotate. Tap a face to place the pin.</span>
+      <span class="mute small" id="hint3">Rotate to choose a view, then switch to Place pin.</span>
       <button class="btn" id="drop3" disabled>Drop pin</button></div>`;
   app.scrollTop = 0;
   bindNav();
@@ -394,14 +421,20 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     canvas = $<HTMLCanvasElement>("#cv3"),
     ctx = canvas.getContext("2d")!,
     drop = $<HTMLButtonElement>("#drop3"),
-    hint = $("#hint3");
+    hint = $("#hint3"),
+    rotateButton = $<HTMLButtonElement>("#rotate3"),
+    pinButton = $<HTMLButtonElement>("#pin3");
   let W = 1,
     H = 1,
     scale = 40,
     q: Q = qmul(qaxis([1, 0, 0], -0.42), qaxis([0, 1, 0], 0.62)),
     pinLocal: V3 | null = null,
+    pinNormal: V3 | null = null,
     pinScreen: [number, number] | null = null,
     cursor: [number, number] = [0, 0],
+    tool: "rotate" | "pin" = "rotate",
+    hoverFace = -1,
+    renderedFaces: FaceDraw[] = [],
     phase: "aim" | "drop" | "result" = "aim",
     startQ: Q = q,
     axis: V3 = [0, 0, 1],
@@ -409,11 +442,18 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     errorCm = 0,
     startTime = 0,
     raf = 0,
-    down: { x: number; y: number; q: Q; moved: boolean } | null = null;
+    down: {
+      x: number;
+      y: number;
+      q: Q;
+      moved: boolean;
+      tool: "rotate" | "pin";
+    } | null = null;
 
   const resize = () => {
     const rect = stage.getBoundingClientRect(),
-      dpr = Math.min(devicePixelRatio || 1, 2);
+      maxDpr = matchMedia("(pointer: coarse)").matches ? 1.5 : 1.75,
+      dpr = Math.min(devicePixelRatio || 1, maxDpr);
     W = Math.max(1, rect.width);
     H = Math.max(1, rect.height);
     canvas.width = Math.round(W * dpr);
@@ -423,6 +463,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     scale = Math.min(W, H) / (shape.extent * 2.8);
     if (!cursor[0]) cursor = [W / 2, H / 2];
+    invalidate();
   };
 
   const project = (p: V3): { p: [number, number]; z: number; world: V3 } => {
@@ -437,49 +478,47 @@ function playRound(set: Shape3D[], results: Result3D[]) {
   };
 
   const faces = () => {
-    const occupied = new Set(shape.voxels.map((voxel) => voxel.p.join(","))),
-      out: FaceDraw[] = [];
-    for (const voxel of shape.voxels)
-      for (const face of FACE_DIRS) {
-        const neighbor = add(voxel.p, face.n);
-        if (occupied.has(neighbor.join(","))) continue;
-        const local = face.v.map((v) => add(voxel.p, v)),
-          projected = local.map(project),
-          normal = qrot(q, face.n);
-        if (normal[2] < -0.08) continue;
-        out.push({
-          pts: projected.map((p) => p.p),
-          local,
-          depth: projected.reduce((sum, p) => sum + p.z, 0) / 4,
-          normal,
-          color: MAT[voxel.mat][0]!,
-        });
-      }
+    const out: FaceDraw[] = [];
+    for (const face of surfaces) {
+      const projected = face.local.map(project),
+        normal = qrot(q, face.normal);
+      if (normal[2] < -0.08) continue;
+      out.push({
+        id: face.id,
+        pts: projected.map((point) => point.p),
+        local: face.local,
+        depth: projected.reduce((sum, point) => sum + point.z, 0) / 4,
+        normal,
+        normalLocal: face.normal,
+        rgb: face.rgb,
+      });
+    }
     return out.sort((a, b) => a.depth - b.depth);
   };
 
-  const shade = (hex: string, normal: V3) => {
-    const n = hex.replace("#", ""),
-      rgb = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16)),
-      light = cl(
-        0.68 + dot(unit(normal), unit([-0.4, -0.7, 0.8])) * 0.24,
-        0.48,
-        1.05,
-      );
+  const shade = (rgb: number[], normal: V3) => {
+    const light = cl(
+      0.68 + dot(unit(normal), unit([-0.4, -0.7, 0.8])) * 0.24,
+      0.48,
+      1.05,
+    );
     return `rgb(${rgb.map((v) => Math.round(cl(v * light, 0, 255))).join(",")})`;
   };
 
-  const drawPin = (point: [number, number], target = false) => {
+  const drawPin = () => {
+    if (!pinLocal || !pinNormal) return;
+    const base = project(pinLocal).p,
+      tip = project(add(pinLocal, mul(pinNormal, 0.48))).p;
     ctx.save();
-    ctx.strokeStyle = target ? css("--ink") : css("--bg");
-    ctx.fillStyle = target ? css("--bg") : css("--ink");
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = css("--bg");
+    ctx.fillStyle = css("--ink");
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.moveTo(point[0], point[1] - 8);
-    ctx.lineTo(point[0], point[1] - 30);
+    ctx.moveTo(...base);
+    ctx.lineTo(...tip);
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(point[0], point[1] - 36, target ? 7 : 9, 0, Math.PI * 2);
+    ctx.arc(tip[0], tip[1], 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
     ctx.restore();
@@ -502,6 +541,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
   };
 
   const render = (time: number) => {
+    raf = 0;
     if (!canvas.isConnected) {
       cleanup3d?.();
       return;
@@ -542,19 +582,28 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     );
     ctx.fill();
     ctx.restore();
-    for (const face of faces()) {
+    renderedFaces = faces();
+    for (const face of renderedFaces) {
       ctx.beginPath();
       face.pts.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
       ctx.closePath();
-      ctx.fillStyle = shade(face.color, face.normal);
+      ctx.fillStyle = shade(face.rgb, face.normal);
       ctx.fill();
       ctx.strokeStyle = css("--ink");
       ctx.globalAlpha = 0.78;
       ctx.lineWidth = 1.15;
       ctx.stroke();
       ctx.globalAlpha = 1;
+      if (tool === "pin" && face.id === hoverFace && phase === "aim") {
+        ctx.strokeStyle = css("--bg");
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.strokeStyle = css("--ink");
+        ctx.lineWidth = 1.25;
+        ctx.stroke();
+      }
     }
-    if (pinLocal) drawPin(project(pinLocal).p);
+    drawPin();
     if (phase === "result" && pinLocal) {
       const cp = project(shape.center).p,
         pp = project(pinLocal).p;
@@ -568,7 +617,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       ctx.stroke();
       ctx.restore();
       drawCenter(cp);
-    } else if (!pinLocal) {
+    } else if (tool === "pin" && !pinLocal) {
       ctx.save();
       ctx.strokeStyle = css("--mute");
       ctx.lineWidth = 1.5;
@@ -580,7 +629,11 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       ctx.stroke();
       ctx.restore();
     }
-    raf = requestAnimationFrame(render);
+    if (phase === "drop") raf = requestAnimationFrame(render);
+  };
+
+  const invalidate = () => {
+    if (!raf) raf = requestAnimationFrame(render);
   };
 
   const pointInFace = (face: FaceDraw, x: number, y: number) => {
@@ -600,28 +653,79 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     return u >= 0 && u <= 1 && v >= 0 && v <= 1 ? [u, v] : null;
   };
 
-  const place = (x: number, y: number) => {
-    if (phase !== "aim") return;
-    const hit = [...faces()]
+  const hitAt = (x: number, y: number) =>
+    [...(renderedFaces.length ? renderedFaces : faces())]
       .reverse()
       .map((face) => ({ face, uv: pointInFace(face, x, y) }))
       .find((item) => item.uv && item.face.normal[2] > 0.06);
+
+  const setHint = (text: string) => {
+    if (hint.textContent !== text) hint.textContent = text;
+  };
+
+  const updateHover = (x: number, y: number) => {
+    const hit = hitAt(x, y),
+      next = hit?.face.id ?? -1;
+    if (next !== hoverFace) {
+      hoverFace = next;
+      invalidate();
+    }
+    return hit;
+  };
+
+  const place = (x: number, y: number, quiet = false) => {
+    if (phase !== "aim" || tool !== "pin") return;
+    const hit = hitAt(x, y);
     if (!hit || !hit.uv) {
-      hint.textContent = "Tap a visible face of the object.";
-      buzz(16);
+      setHint("Choose a visible surface.");
+      if (!quiet) buzz(16);
       return;
     }
     const [u, v] = hit.uv,
       e1 = sub(hit.face.local[1], hit.face.local[0]),
       e2 = sub(hit.face.local[3], hit.face.local[0]);
     pinLocal = add(hit.face.local[0], add(mul(e1, u), mul(e2, v)));
+    pinNormal = hit.face.normalLocal;
+    hoverFace = hit.face.id;
     cursor = [x, y];
     drop.disabled = false;
-    hint.textContent = "Pin placed. Drag to inspect it or drop when ready.";
-    snd(520, 0.04, "sine", 0.035);
-    buzz(6);
-    say("Pin placed on the three-dimensional object.");
+    setHint("Pin placed. Drag to fine-tune, or Rotate to inspect.");
+    if (!quiet) {
+      snd(520, 0.04, "sine", 0.035);
+      buzz(6);
+      say("Pin placed on the three-dimensional object.");
+    }
+    invalidate();
   };
+
+  const setTool = (next: "rotate" | "pin") => {
+    if (phase !== "aim") return;
+    tool = next;
+    stage.classList.toggle("tool-rotate", next === "rotate");
+    stage.classList.toggle("tool-pin", next === "pin");
+    rotateButton.setAttribute("aria-pressed", String(next === "rotate"));
+    pinButton.setAttribute("aria-pressed", String(next === "pin"));
+    hoverFace = -1;
+    setHint(
+      next === "rotate"
+        ? pinLocal
+          ? "Drag to inspect the pin, then return to Place pin to adjust."
+          : "Drag to rotate the object."
+        : pinLocal
+          ? "Drag the pin across a visible surface to fine-tune."
+          : "Tap or drag across a visible surface.",
+    );
+    canvas.setAttribute(
+      "aria-label",
+      next === "rotate"
+        ? "Three-dimensional object. Drag or use the arrow keys to rotate it."
+        : "Three-dimensional object. Tap a visible surface, or move with the arrow keys and press Enter to place the pin.",
+    );
+    invalidate();
+  };
+
+  rotateButton.onclick = () => setTool("rotate");
+  pinButton.onclick = () => setTool("pin");
 
   const localPoint = (event: PointerEvent) => {
     const rect = canvas.getBoundingClientRect();
@@ -635,49 +739,85 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     if (phase !== "aim") return;
     const [x, y] = localPoint(event);
     canvas.setPointerCapture(event.pointerId);
-    down = { x, y, q, moved: false };
+    down = { x, y, q, moved: false, tool };
     cursor = [x, y];
+    if (tool === "pin") place(x, y);
   };
   canvas.onpointermove = (event) => {
-    if (!down || phase !== "aim") return;
-    const [x, y] = localPoint(event),
-      dx = x - down.x,
-      dy = y - down.y;
+    if (phase !== "aim") return;
+    const [x, y] = localPoint(event);
     cursor = [x, y];
+    if (!down) {
+      if (tool === "pin") updateHover(x, y);
+      return;
+    }
+    if (down.tool === "pin") {
+      place(x, y, true);
+      return;
+    }
+    const dx = x - down.x,
+      dy = y - down.y;
     if (Math.hypot(dx, dy) > 5) down.moved = true;
     if (down.moved) {
       q = qmul(
         qaxis([1, 0, 0], dy * 0.009),
         qmul(qaxis([0, 1, 0], dx * 0.009), down.q),
       );
-      hint.textContent = "Release, then tap a face to place the pin.";
+      renderedFaces = [];
+      setHint(
+        pinLocal
+          ? "Release to inspect the pin."
+          : "Release when the view feels right.",
+      );
+      invalidate();
     }
   };
-  canvas.onpointerup = canvas.onpointercancel = (event) => {
+  canvas.onpointerup = canvas.onpointercancel = () => {
     if (!down) return;
-    const [x, y] = localPoint(event),
-      moved = down.moved;
+    const rotated = down.tool === "rotate";
     down = null;
-    if (!moved) place(x, y);
+    if (rotated)
+      setHint(
+        pinLocal
+          ? "Switch to Place pin to adjust, or drop when ready."
+          : "Switch to Place pin and choose a visible surface.",
+      );
+  };
+  canvas.onpointerleave = () => {
+    if (!down && hoverFace !== -1) {
+      hoverFace = -1;
+      invalidate();
+    }
   };
   canvas.onkeydown = (event) => {
     if (phase !== "aim") return;
-    const step = event.shiftKey ? 0.12 : 7;
-    if (event.shiftKey && event.key.startsWith("Arrow")) {
+    if (event.key.toLowerCase() === "r") setTool("rotate");
+    else if (event.key.toLowerCase() === "p") setTool("pin");
+    else if (tool === "rotate" && event.key.startsWith("Arrow")) {
       const axis: V3 =
         event.key === "ArrowLeft" || event.key === "ArrowRight"
           ? [0, 1, 0]
           : [1, 0, 0];
       const direction =
         event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
-      q = qmul(qaxis(axis, step * direction), q);
-    } else if (event.key === "ArrowLeft")
-      cursor[0] = cl(cursor[0] - step, 0, W);
-    else if (event.key === "ArrowRight") cursor[0] = cl(cursor[0] + step, 0, W);
-    else if (event.key === "ArrowUp") cursor[1] = cl(cursor[1] - step, 0, H);
-    else if (event.key === "ArrowDown") cursor[1] = cl(cursor[1] + step, 0, H);
-    else if (event.key === "Enter" || event.key === " ") place(...cursor);
+      q = qmul(qaxis(axis, 0.12 * direction), q);
+      renderedFaces = [];
+      invalidate();
+    } else if (tool === "pin" && event.key === "ArrowLeft")
+      cursor[0] = cl(cursor[0] - 7, 0, W);
+    else if (tool === "pin" && event.key === "ArrowRight")
+      cursor[0] = cl(cursor[0] + 7, 0, W);
+    else if (tool === "pin" && event.key === "ArrowUp")
+      cursor[1] = cl(cursor[1] - 7, 0, H);
+    else if (tool === "pin" && event.key === "ArrowDown")
+      cursor[1] = cl(cursor[1] + 7, 0, H);
+    else if (tool === "pin" && (event.key === "Enter" || event.key === " "))
+      place(...cursor);
     else return;
+    if (tool === "pin" && event.key.startsWith("Arrow")) {
+      updateHover(...cursor);
+      setHint("Press Enter to place the pin here.");
+    }
     event.preventDefault();
   };
 
@@ -685,6 +825,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     const pts = score3D(errorCm),
       grade = GRADES[gi(pts)][1],
       foot = $("#foot3");
+    stage.classList.add("is-result");
     foot.innerHTML = `<div class="result3"><div><span class="big">${grade}</span><p class="mute small">${errorCm.toFixed(1)} cm from the balance line</p></div><strong>+${pts}</strong></div><button class="btn" id="next3">${round === RN3 - 1 ? "See 3D result" : "Next object"}</button>`;
     const next = $<HTMLButtonElement>("#next3");
     next.onclick = () => {
@@ -715,6 +856,9 @@ function playRound(set: Shape3D[], results: Result3D[]) {
   drop.onclick = () => {
     if (!pinLocal || phase !== "aim") return;
     phase = "drop";
+    hoverFace = -1;
+    rotateButton.disabled = true;
+    pinButton.disabled = true;
     drop.disabled = true;
     pinScreen = project(pinLocal).p;
     startQ = q;
@@ -732,12 +876,13 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     hint.textContent = "Released.";
     snd(190, 0.1, "triangle", 0.06);
     buzz(12);
+    invalidate();
   };
 
   const ro = new ResizeObserver(resize);
   ro.observe(stage);
   resize();
-  raf = requestAnimationFrame(render);
+  invalidate();
   cleanup3d = () => {
     cancelAnimationFrame(raf);
     ro.disconnect();
@@ -745,22 +890,26 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       canvas.onpointermove =
       canvas.onpointerup =
       canvas.onpointercancel =
+      canvas.onpointerleave =
         null;
     canvas.onkeydown = null;
+    rotateButton.onclick = pinButton.onclick = null;
     cleanup3d = null;
   };
 }
 
-function finish3D(results: Result3D[]) {
+export function finish3D(results: Result3D[]) {
   cleanup3d?.();
   ui.ph = "mode3d";
   const total = results.reduce((sum, result) => sum + result.pts, 0);
   app.className = "result-screen result3-screen";
   app.innerHTML = `<header class="receipt-heading site-header"><button class="wordmark brand-home" id="brand-home" type="button" aria-label="Home">Pinpoise</button><div>${navBtns()}</div></header>
     <div class="result-summary"><div><p class="mute small">Pinpoise 3D · No. ${NO} · ${fmtDate(TODAY, true)}</p><h1>Three dimensions. Three pins.</h1></div><p class="total"><b>${total}</b><span>/ 300</span></p></div>
-    <div class="results3">${results.map((result, i) => `<div><span>${i + 1}</span><b>${result.name}</b><small class="mute">${result.cm.toFixed(1)} cm</small><strong>${result.pts}</strong></div>`).join("")}</div>
-    <div class="result-actions"><button class="btn" id="home3">Back to Pinpoise</button><p class="mute small" data-next>Next set in ${untilNext()}</p></div>`;
+    <div class="results3">${results.map((result, i) => `<div><span>${i + 1}</span><b>${result.name}</b><small class="mute">${result.cm.toFixed(1)} cm</small><i aria-hidden="true"><span style="width:${result.pts}%"></span></i><strong>${result.pts}</strong></div>`).join("")}</div>
+    <div class="result-actions"><div class="copy-pair"><button class="btn" id="copy-result">Copy image</button><button class="btn ghost" id="copy-text">Copy text</button></div><button class="text-btn" id="home3">Back to Pinpoise</button><p class="mute small" data-next>Next set in ${untilNext()}</p><p class="small copy-status" id="copy-status" role="status" aria-live="polite"></p></div>`;
   bindNav();
+  $("#copy-result").onclick = () => copy3DResult(results, TODAY);
+  $("#copy-text").onclick = () => copy3DText(results, TODAY);
   $("#home3").onclick = () => {
     dispatchEvent(new Event("pinpoise:navigate"));
     import("./home").then(({ home }) => home());

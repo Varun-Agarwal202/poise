@@ -381,39 +381,80 @@ h3 {
 }
 .mode3d-link {
   width: 100%;
-  min-height: 62px;
+  min-height: 72px;
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
+  gap: 14px;
+  padding: 10px 16px 10px 10px;
   border: 1px solid var(--line);
   border-radius: var(--r-control);
-  background: transparent;
+  background: color-mix(in srgb, var(--card) 56%, transparent);
   color: var(--ink);
   text-align: left;
   transition:
     background 0.15s ease-out,
     transform 0.12s ease-out;
 }
-.mode3d-link span {
+.mode3d-copy {
   display: grid;
-  gap: 1px;
+  gap: 2px;
 }
-.mode3d-link small {
+.mode3d-copy b {
+  font-size: 1.05rem;
+}
+.mode3d-copy small {
   color: var(--mute);
   font-size: 0.75rem;
 }
-.mode3d-link > strong {
+.mode3d-mark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid var(--line);
+}
+.mode3d-mark svg {
+  width: 36px;
+  height: 36px;
+  overflow: visible;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.16s ease-out;
+}
+.mode3d-mark circle {
+  fill: var(--accent);
+  stroke: none;
+}
+.mode3d-cta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   color: var(--mute);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.mode3d-cta svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .mode3d-link:active {
   transform: translateY(1px);
 }
 @media (hover: hover) and (pointer: fine) {
   .mode3d-link:hover {
-    background: var(--card);
+    background: color-mix(in srgb, var(--card) 88%, transparent);
+  }
+  .mode3d-link:hover .mode3d-mark svg {
+    transform: translateY(-2px) rotate(-2deg);
   }
 }
 .mode3d-screen {
@@ -448,8 +489,67 @@ h3 {
   touch-action: none;
   cursor: grab;
 }
-#cv3:active {
+.tool-rotate #cv3:active {
   cursor: grabbing;
+}
+.tool-pin #cv3 {
+  cursor: crosshair;
+}
+.stage3-tools {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 2;
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--bg);
+  box-shadow: 0 7px 20px color-mix(in srgb, var(--ink) 12%, transparent);
+  transform: translateX(-50%);
+  transition: opacity 0.14s ease-out;
+}
+.stage3-tools button {
+  min-width: 104px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: calc(var(--r-control) - 4px);
+  background: transparent;
+  color: var(--mute);
+  font-weight: 750;
+  transition:
+    background 0.14s ease-out,
+    color 0.14s ease-out;
+}
+.stage3-tools button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+.stage3-tools button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.stage3-tools button:disabled {
+  opacity: 0.55;
+}
+.stage3.is-result .stage3-tools {
+  opacity: 0;
+  pointer-events: none;
+}
+.stage3-tools svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .stage3:has(#cv3:focus-visible) {
   outline: 3px solid var(--accent);
@@ -519,7 +619,7 @@ h3 {
 }
 .results3 > div {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto 52px;
+  grid-template-columns: 28px minmax(0, 1fr) auto minmax(80px, 1fr) 52px;
   align-items: baseline;
   gap: 12px;
   min-height: 58px;
@@ -529,6 +629,24 @@ h3 {
 .results3 > div > span,
 .results3 > div > strong {
   font-variant-numeric: tabular-nums;
+}
+.results3 > div > i {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--line);
+}
+.results3 > div > i > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ink);
+}
+.result3-screen .copy-pair {
+  width: 100%;
+}
+.result3-screen .text-btn {
+  min-height: 44px;
 }
 .results3 > div > strong {
   text-align: right;
@@ -1736,7 +1854,25 @@ dialog::backdrop {
     gap: 10px;
   }
   .mode3d-link {
-    min-height: 56px;
+    min-height: 64px;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 8px 12px 8px 8px;
+  }
+  .mode3d-mark {
+    width: 42px;
+    height: 42px;
+  }
+  .mode3d-mark svg {
+    width: 32px;
+    height: 32px;
+  }
+  .mode3d-cta {
+    font-size: 0;
+  }
+  .mode3d-cta svg {
+    width: 20px;
+    height: 20px;
   }
   .stage3 {
     min-height: clamp(230px, 38dvh, 330px);
@@ -1763,10 +1899,18 @@ dialog::backdrop {
     display: none;
   }
   .results3 > div {
-    grid-template-columns: 20px minmax(0, 1fr) auto;
+    grid-template-columns: 20px minmax(0, 1fr) minmax(52px, 0.8fr) 40px;
   }
   .results3 > div small {
     display: none;
+  }
+  .stage3-tools {
+    bottom: 10px;
+  }
+  .stage3-tools button {
+    min-width: 98px;
+    min-height: 44px;
+    padding: 7px 11px;
   }
   .play-screen .foot {
     gap: 8px;

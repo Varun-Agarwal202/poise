@@ -42,7 +42,8 @@ if (CH)
 
 setInterval(() => {
   if (!PINNED && ds(new Date()) !== TODAY) {
-    if (ui.ph === "home" || ui.ph === "end") location.reload();
+    if (ui.ph === "home" || ui.ph === "end" || ui.ph === "mode3d")
+      location.reload();
     return;
   }
   document

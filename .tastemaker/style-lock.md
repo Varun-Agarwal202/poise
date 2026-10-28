@@ -50,12 +50,14 @@ Restored from the original palette after the warm direction was rejected.
 - Daily set strip and results sheet use rules and numbering like a printed test record.
 - Mixed-material objects show density through prominent values, material-colored bars, and relative multipliers.
 - Main actions use squared instrument controls, not generic pill buttons.
-- Stats and settings share one right-side You panel, keeping the main tool rail compact.
+- Account and settings use separate right-side panels and separate tool-rail actions.
+- Pinpoise 3D inherits the same neutral palette and instrument controls. Depth comes from projected geometry, face shading, and physical rotation rather than gradients or decorative effects.
 
 ## Guardrails
 
 - No gradients, glass effects, floating cards, decorative blobs, or emoji icons.
 - No em dashes in shipped copy.
+- No copied celebrity or licensed-character silhouettes. Character shapes are original archetypes.
 - No decorative process labels or interface copy that explains the visual treatment.
 - Density differences must be shown visually, never explained with a slogan.
 - Result language should report a useful number, not offer vague encouragement.

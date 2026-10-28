@@ -4,7 +4,7 @@ import { createCanvas } from "@napi-rs/canvas";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom'; export * as rank from './src/rank'; export * as auth from './src/auth';`;
+const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom'; export * as rank from './src/rank'; export * as auth from './src/auth'; export * as mode3d from './src/mode3d';`;
 const compiled = await bundle({
   stdin: { contents: entry, resolveDir: process.cwd(), loader: "ts" },
   bundle: true,
@@ -405,6 +405,120 @@ const body = gen.build(
   store.puzzleOf("2026-10-26").seed,
   store.puzzleOf("2026-10-26").fams,
 )[0];
+
+// The balance point is independently checkable on simple shapes. These known-answer
+// cases protect the density, transform and raster paths used by every generated form.
+const uniform = gen.prep({
+  fam: "test",
+  a: "#000",
+  rot: 0,
+  fl: false,
+  parts: [["wood", "r", -0.3, -0.15, 0.6, 0.3]],
+  name: "Uniform rectangle",
+});
+assert(Math.abs(uniform.c[0] - 0.5) < 0.002);
+assert(Math.abs(uniform.c[1] - 0.5) < 0.002);
+const weighted = gen.prep({
+  fam: "test",
+  a: "#000",
+  rot: 0,
+  fl: false,
+  parts: [
+    ["wood", "r", -0.34, -0.1, 0.2, 0.2],
+    ["steel", "r", 0.14, -0.1, 0.2, 0.2],
+  ],
+  name: "Weighted pair",
+});
+const rawCenter =
+  (-0.24 * gen.MAT.wood[1] + 0.24 * gen.MAT.steel[1]) /
+  (gen.MAT.wood[1] + gen.MAT.steel[1]);
+const expectedCenter = 0.5 + weighted.s * (rawCenter - weighted.off[0]);
+assert(Math.abs(weighted.c[0] - expectedCenter) < 0.004);
+assert(Math.abs(weighted.c[1] - 0.5) < 0.002);
+const rotatedWeighted = gen.prep({
+  fam: "test",
+  a: "#000",
+  rot: Math.PI,
+  fl: false,
+  parts: [
+    ["wood", "r", -0.34, -0.1, 0.2, 0.2],
+    ["steel", "r", 0.14, -0.1, 0.2, 0.2],
+  ],
+  name: "Rotated weighted pair",
+});
+assert(Math.abs(rotatedWeighted.c[0] - (1 - weighted.c[0])) < 0.004);
+assert(Math.abs(rotatedWeighted.c[1] - (1 - weighted.c[1])) < 0.004);
+const cutout = gen.prep({
+  fam: "test",
+  a: "#000",
+  rot: Math.PI,
+  fl: true,
+  parts: [
+    ["glass", "c", 0, 0, 0.36],
+    ["X", "c", 0, 0, 0.18],
+  ],
+  name: "Ring",
+});
+assert(Math.abs(cutout.c[0] - 0.5) < 0.002);
+assert(Math.abs(cutout.c[1] - 0.5) < 0.002);
+ok(
+  "Center of mass matches known uniform, mixed-density, rotated and cutout shapes",
+);
+
+const { mode3d } = e.api;
+const voxelPair = mode3d.center3D([
+  { p: [-1, 0, 0], mat: "wood" },
+  { p: [1, 0, 0], mat: "steel" },
+]);
+assert(Math.abs(voxelPair[0] - (7.8 - 0.6) / (7.8 + 0.6)) < 1e-12);
+assert.equal(voxelPair[1], 0);
+assert.equal(voxelPair[2], 0);
+let score3dPrevious = 101;
+for (let cm = 0; cm <= 20; cm += 0.1) {
+  const score = mode3d.score3D(cm);
+  assert(score <= score3dPrevious);
+  score3dPrevious = score;
+}
+assert.equal(mode3d.score3D(0), 100);
+const set3dA = mode3d.make3DSet("2026-10-27"),
+  set3dB = mode3d.make3DSet("2026-10-27");
+assert.equal(set3dA.length, 3);
+assert.equal(new Set(set3dA.map((shape) => shape.id)).size, 3);
+assert.deepEqual(set3dA, set3dB);
+set3dA.forEach((shape) => {
+  assert(shape.voxels.length >= 10);
+  assert(new Set(shape.voxels.map((voxel) => voxel.mat)).size >= 2);
+  assert(shape.center.every(Number.isFinite));
+});
+ok("Pinpoise 3D sets are deterministic, varied and density-weighted");
+const play3dDate = Array.from({ length: 30 }, (_, i) =>
+  new Date(Date.UTC(2026, 9, 27 + i)).toISOString().slice(0, 10),
+).find((date) =>
+  ["cat", "bot", "comet"].includes(mode3d.make3DSet(date)[0].id),
+);
+assert(play3dDate);
+const play3d = env(play3dDate);
+play3d.api.mode3d.start3D();
+assert(play3d.w.document.querySelector(".stage3"));
+assert.equal(play3d.w.document.querySelectorAll(".density3 > span").length, 2);
+const canvas3d = play3d.w.document.querySelector("#cv3"),
+  drop3d = play3d.w.document.querySelector("#drop3");
+canvas3d.dispatchEvent(
+  new play3d.w.KeyboardEvent("keydown", { key: "Enter", cancelable: true }),
+);
+assert(!drop3d.disabled);
+drop3d.click();
+play3d.frame();
+assert(play3d.w.document.querySelector(".result3"));
+play3d.w.document.querySelector("#next3").click();
+assert(
+  play3d.w.document
+    .querySelector(".round-header")
+    .textContent.includes("Object 2 of 3"),
+);
+play3d.close();
+ok("Pinpoise 3D supports keyboard pinning, drop physics and round progression");
+
 const frame = { B: 400, o: { x: 0, y: 0 }, c: { x: 200, y: 200 } };
 const simulate = (P, hz = 60) => {
   const p = physics.swing(body, frame, P, 0).ps;
@@ -710,11 +824,11 @@ assert(e.w.document.querySelector("#sht").textContent.includes("How to play"));
 e.w.document.querySelector("#xs").click();
 assert(e.w.document.querySelector("#me"));
 assert(!e.w.document.querySelector("#st"));
-assert(!e.w.document.querySelector("#se"));
+assert(e.w.document.querySelector("#se"));
 e.w.document.querySelector("#me").click();
-assert.equal(e.w.document.querySelector("#sht").textContent, "You");
+assert.equal(e.w.document.querySelector("#sht").textContent, "Account");
 assert.equal(e.w.document.querySelectorAll(".stats > div").length, 4);
-assert(e.w.document.querySelector('input[name="theme"]'));
+assert(!e.w.document.querySelector('input[name="theme"]'));
 assert(e.w.document.querySelector("#account-in"));
 e.w.document.querySelector("#account-in").click();
 await new Promise((resolve) => setTimeout(resolve, 0));
@@ -736,7 +850,12 @@ assert.equal(
   "new-password",
 );
 e.w.document.querySelector("#xs").click();
-ok("Home exposes Home, Archive, You and How to play; no practice action");
+e.w.document.querySelector("#se").click();
+assert.equal(e.w.document.querySelector("#sht").textContent, "Settings");
+assert(e.w.document.querySelector('input[name="theme"]'));
+assert(!e.w.document.querySelector("#account-in"));
+e.w.document.querySelector("#xs").click();
+ok("Home exposes separate Archive, Account, Settings and How to play actions");
 // Archive resumes after midnight must not count as today's completion.
 const old = {
   days: {},

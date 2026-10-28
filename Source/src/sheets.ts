@@ -26,18 +26,28 @@ import {
 } from "./auth";
 
 export const navBtns = () =>
-  `<nav class="primary-nav" aria-label="Main">${ib("hm", "home", "Home")}${ib("ar", "archive", "Archive")}${ib("me", "user", "You")}${ib("hp", "help", "How to play")}</nav>`;
+  `<nav class="primary-nav" aria-label="Main">${ib("ar", "archive", "Archive")}${ib("me", "user", "Account")}${ib("se", "tune", "Settings")}${ib("hp", "help", "How to play")}</nav>`;
 export function bindNav() {
   const actions: Record<string, () => void> = {
-    hm: home,
     ar: archive,
     me: you,
+    se: settings,
     hp: help,
   };
   for (const [id, action] of Object.entries(actions)) {
     const b = $maybe("#" + id);
-    if (b) b.onclick = action;
+    if (b)
+      b.onclick = () => {
+        dispatchEvent(new Event("pinpoise:navigate"));
+        action();
+      };
   }
+  const brand = $maybe<HTMLButtonElement>("#brand-home");
+  if (brand)
+    brand.onclick = () => {
+      dispatchEvent(new Event("pinpoise:navigate"));
+      home();
+    };
 }
 
 export function sheet(title: string, body: string, className = "") {
@@ -227,8 +237,10 @@ function help() {
       <li>Press <b>Drop pin</b> when you are ready. Closer pins score more. 100 takes a pin within a couple of millimetres.</li>
       <li>A near miss tips a little. A wide miss swings. Distance decides your score, not how much it moves.</li>
     </ol>
+    <h3>Pinpoise 3D</h3>
+    <p class="mute small">Three objects a day. Drag to rotate, then tap a visible surface to place the pin. The object can tip in any direction.</p>
     <p class="mute small">Arrow keys move the pin. Shift for bigger steps. Enter or Space drops it. On a phone, drag for a magnified view.</p>
-    <p class="mute small">Scores and your streak stay on this device. No account needed.</p>`,
+    <p class="mute small">Scores and your streak stay on this device. Sign in only if you want them synced.</p>`,
   );
 }
 
@@ -239,15 +251,37 @@ function you() {
     gc = [0, 0, 0, 0, 0];
   r.forEach((x) => x.pts.forEach((p) => gc[gi(p)]++));
   const mx = Math.max(1, ...gc);
-  track("you_open", { played: n });
+  track("account_open", { played: n });
   const dl = sheet(
-    "You",
+    "Account",
     `${accountCard()}
     <section class="sheet-section"><div class="sheet-section-head"><h3>Stats</h3></div>
     <div class="stats"><div><b>${n}</b><span>Played</span></div><div><b>${streakNow()}</b><span>Streak</span></div><div><b>${avg}</b><span>Average</span></div><div><b>${db.best}</b><span>Best</span></div></div>
     ${n ? `<div class="dist">${GRADES.map((g, i) => `<div class="bar"><span>${g[1]}</span><span class="trk"><i class="g${i}" style="width:${gc[i] ? Math.max(6, (gc[i] / mx) * 100) : 0}%"></i></span><b>${gc[i]}</b></div>`).join("")}</div>` : '<p class="mute small">Finish today’s puzzle to start your stats.</p>'}
-    ${n ? `<p class="mute small">Best streak: ${db.max}</p>` : ""}</section>
-    <section class="sheet-section"><div class="sheet-section-head"><h3>Appearance</h3></div><div class="setl">${seg(
+    ${n ? `<p class="mute small">Best streak: ${db.max}</p>` : ""}</section>`,
+    "you-dialog",
+  );
+  const accountIn = dl.querySelector<HTMLButtonElement>("#account-in");
+  if (accountIn)
+    accountIn.onclick = () => {
+      dl.close();
+      setTimeout(signIn, 0);
+    };
+  const accountOut = dl.querySelector<HTMLButtonElement>("#account-out");
+  if (accountOut)
+    accountOut.onclick = async () => {
+      accountOut.disabled = true;
+      await signOut();
+      dl.close();
+      setTimeout(you, 0);
+    };
+}
+
+function settings() {
+  track("settings_open", {});
+  const dl = sheet(
+    "Settings",
+    `<section class="sheet-section first"><div class="sheet-section-head"><h3>Appearance</h3></div><div class="setl">${seg(
       "theme",
       "Theme",
       [
@@ -274,20 +308,6 @@ function you() {
     <details class="keyboard"><summary>Keyboard controls</summary><p class="mute small">Arrow keys move the pin. Hold Shift for bigger steps. Enter or Space drops it.</p></details>`,
     "you-dialog",
   );
-  const accountIn = dl.querySelector<HTMLButtonElement>("#account-in");
-  if (accountIn)
-    accountIn.onclick = () => {
-      dl.close();
-      setTimeout(signIn, 0);
-    };
-  const accountOut = dl.querySelector<HTMLButtonElement>("#account-out");
-  if (accountOut)
-    accountOut.onclick = async () => {
-      accountOut.disabled = true;
-      await signOut();
-      dl.close();
-      setTimeout(you, 0);
-    };
   dl.querySelectorAll<HTMLInputElement>(".setl input").forEach(
     (i) =>
       (i.onchange = () => {

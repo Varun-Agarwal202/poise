@@ -171,7 +171,60 @@ const WELDABLE = [
   "bone",
 ];
 let weldName = "",
+  spriteName = "",
   v2 = false;
+
+const PIXEL_SPRITES = [
+  {
+    name: "Pixel ghost",
+    rows: [
+      "0011100",
+      "0111110",
+      "1111111",
+      "1101011",
+      "1111111",
+      "1111111",
+      "1101011",
+    ],
+  },
+  {
+    name: "Pixel crab",
+    rows: [
+      "100000001",
+      "010000010",
+      "001111100",
+      "011010110",
+      "111111111",
+      "101111101",
+      "100101001",
+    ],
+  },
+  {
+    name: "Pixel bot",
+    rows: [
+      "0001000",
+      "0011100",
+      "0111110",
+      "1101011",
+      "1111111",
+      "0111110",
+      "1100011",
+      "1100011",
+    ],
+  },
+  {
+    name: "Pixel cat",
+    rows: [
+      "1100011",
+      "1110111",
+      "1111111",
+      "1101011",
+      "1111111",
+      "0111110",
+      "0011100",
+    ],
+  },
+] as const;
 
 const FAM: Record<string, Fam> = {
   ...Object.fromEntries(Object.entries(OBJECTS).map(([id, o]) => [id, o.make])),
@@ -310,6 +363,29 @@ const FAM: Record<string, Fam> = {
       u,
       u,
     ]);
+  },
+  sprite(r, _rr, m) {
+    const art = PIXEL_SPRITES[Math.floor(r() * PIXEL_SPRITES.length)],
+      u = 0.095,
+      h = art.rows.length,
+      w = Math.max(...art.rows.map((row) => row.length));
+    spriteName = art.name;
+    return art.rows.flatMap((row, y) =>
+      [...row].flatMap((cell, x) =>
+        cell === "1"
+          ? [
+              [
+                m(Math.min(2, Math.floor((x / Math.max(1, w - 1)) * 3))),
+                "r",
+                (x - (w - 1) / 2) * u,
+                (y - (h - 1) / 2) * u,
+                u * 1.02,
+                u * 1.02,
+              ] as Part,
+            ]
+          : [],
+      ),
+    );
   },
   chev(_r, rr, m) {
     const A = rr(0.8, 1.5),
@@ -632,6 +708,7 @@ const NOUN: Record<string, string[]> = {
   mol: ["Molecule", "Cluster", "Compound"],
   prop: ["Propeller", "Windmill", "Fan"],
   poly: ["Block", "Tile", "Piece"],
+  sprite: ["Pixel ghost", "Pixel crab", "Pixel bot", "Pixel cat"],
   chev: ["Boomerang", "Wishbone", "Hook"],
   chain: ["Caterpillar", "Chain", "Snake"],
   star: ["Star", "Splat", "Burst"],
@@ -914,7 +991,11 @@ export function mk(
       rot: ((Math.floor(r() * 3) - 1) * Math.PI) / 12,
       fl: r() < 0.5,
       parts,
-      name: OBJECTS[family]?.name ?? names[hash(seed + family) % names.length],
+      name:
+        family === "sprite"
+          ? spriteName
+          : (OBJECTS[family]?.name ??
+            names[hash(seed + family) % names.length]),
     };
   }
   const a = (T ? PALS[hash(seed) % PALS.length] : COLORS)[Math.floor(r() * 5)],
@@ -1032,7 +1113,7 @@ function paint(
   });
   x.restore();
 }
-export function prep(raw: Raw, gv = G0): Shape {
+export function prep(raw: Raw, gv = G0, massSize = 384): Shape {
   const R = raw as Shape;
   R.gv = gv;
   const mk2 = (n: number) => {
@@ -1072,38 +1153,42 @@ export function prep(raw: Raw, gv = G0): Shape {
       : 512;
   const sp = mk2(SP);
   paint(R, ctx(sp), SP, false, R.s, R.off);
-  const mm = mk2(160),
+  // Use a denser hidden raster than the old 160px pass. This keeps narrow
+  // features, holes and pixel forms from nudging the calculated balance point.
+  const MN = massSize,
+    mm = mk2(MN),
     my = ctx(mm, true);
-  paint(R, my, 160, true, R.s, R.off);
-  d = my.getImageData(0, 0, 160, 160).data;
+  paint(R, my, MN, true, R.s, R.off);
+  d = my.getImageData(0, 0, MN, MN).data;
   let s = 0,
     sx = 0,
     sy = 0;
-  for (let k = 0; k < 25600; k++)
+  for (let k = 0; k < MN * MN; k++)
     if (d[k * 4 + 3] > 127) {
       const w = d[k * 4] / 12;
       s += w;
-      sx += w * ((k % 160) + 0.5);
-      sy += w * (((k / 160) | 0) + 0.5);
+      sx += w * ((k % MN) + 0.5);
+      sy += w * (((k / MN) | 0) + 0.5);
     }
   const cx0 = sx / s,
     cy0 = sy / s;
   let I = 0;
-  for (let k = 0; k < 25600; k++)
+  for (let k = 0; k < MN * MN; k++)
     if (d[k * 4 + 3] > 127) {
       const w = d[k * 4] / 12,
-        px = (k % 160) + 0.5,
-        py = ((k / 160) | 0) + 0.5;
+        px = (k % MN) + 0.5,
+        py = ((k / MN) | 0) + 0.5;
       I += w * ((px - cx0) ** 2 + (py - cy0) ** 2);
     }
   R.sp = sp;
-  R.c = [cx0 / 160, cy0 / 160];
-  R.k2 = I / s / 25600;
+  R.c = [cx0 / MN, cy0 / MN];
+  R.k2 = I / s / (MN * MN);
   return R;
 }
 export const build = (seed: string, fams: string[]) => {
   const T = twistOf(seed);
-  return fams.map((f, i) => prep(mk(seed, i, f, T), T?.g));
+  const massSize = seed.startsWith("p6|") ? 384 : 160;
+  return fams.map((f, i) => prep(mk(seed, i, f, T), T?.g, massSize));
 };
 export const famsFor = (seed: string) => {
   const r = rng(hash(seed)),

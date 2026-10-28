@@ -79,7 +79,7 @@ export function end(rec: Rec, isNew: boolean) {
     waiting = fallbackRank(rec.tot),
     startingBins = fallbackBins();
   app.innerHTML = `<section id="result-sheet" aria-label="Your results">
-    <header class="receipt-heading site-header"><span class="wordmark">Pinpoise</span><div data-copy-exclude>${navBtns()}</div></header>
+    <header class="receipt-heading site-header"><button class="wordmark brand-home" id="brand-home" type="button" aria-label="Home">Pinpoise</button><div data-copy-exclude>${navBtns()}</div></header>
     <div class="result-summary"><div class="rank-summary"><p class="mute small">No. ${noOf(rec.d)} · ${fmtDate(rec.d, true)}</p><h1 class="rank-pill" id="eh" tabindex="-1">${waiting}</h1>${distribution(rec.tot, startingBins)}${isNew ? '<p class="mute small">Personal best</p>' : ""}</div><p class="total"><b>${rec.tot}</b><span>/ 500</span></p></div>
     <div class="result-objects">${objects(rec, names, dpr)}</div>
     <div class="receipt-footer"><span class="pin-key"><i class="key-player"></i>Your pin <i class="key-target"></i>Balance point</span></div>

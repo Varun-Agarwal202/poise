@@ -145,6 +145,7 @@ export function home() {
   <div class="set" role="img" aria-label="Today’s five objects">${today.map(() => `<canvas width="${80 * dpr}" height="${80 * dpr}"></canvas>`).join("")}</div>
   ${recoveredSave ? '<p class="small mute">An invalid score was set aside. Valid results are safe.</p>' : ""}
   <button class="btn" id="go">${label}</button>
+  <button class="mode3d-link" id="go3" type="button"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg><span><b>Pinpoise 3D</b><small>Three objects. One pin each.</small></span><strong>Play</strong></button>
   <p class="small mute" data-next>Next puzzle in ${untilNext()}</p></div>`;
   app.scrollTop = 0;
   const mc = css("--mute");
@@ -154,4 +155,5 @@ export function home() {
   mount(homeDemo);
   bindNav();
   $("#go").onclick = () => (d ? end(d, false) : start("daily"));
+  $("#go3").onclick = async () => (await import("./mode3d")).start3D();
 }

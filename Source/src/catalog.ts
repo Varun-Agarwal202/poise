@@ -295,5 +295,5 @@ export const COLLECTIONS = [
   ["lock", "scissors", "kettle", "watering", "magnet", "ring", "wrench"],
   ["bird", "fish", "sailboat", "umbrella", "arrow", "chev", "moon"],
   ["guitar", "lamp", "rook", "anchor", "mush", "prop", "tree"],
-  ["gear", "star", "poly", "chain", "mol", "lump", "weld"],
+  ["gear", "star", "sprite", "chain", "mol", "lump", "weld"],
 ];

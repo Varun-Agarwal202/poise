@@ -56,7 +56,7 @@ import { end } from "./end";
 import { navBtns, bindNav } from "./sheets";
 import { syncAccount } from "./auth";
 
-export type Phase = "home" | "aim" | "swing" | "result" | "end";
+export type Phase = "home" | "aim" | "swing" | "result" | "end" | "mode3d";
 export const ui = { ph: "home" as Phase };
 
 interface Result {
@@ -237,7 +237,7 @@ function round() {
   setTitle(`${"No. " + noOf(g.d)} · Shape ${g.r + 1} of ${RN}`);
   const coarse = matchMedia("(pointer:coarse)").matches;
   const hint = coarse ? TAP_HINT : DRAG_HINT;
-  app.innerHTML = `<header class="site-header"><span class="wordmark">Pinpoise</span>${navBtns()}</header>
+  app.innerHTML = `<header class="site-header"><button class="wordmark brand-home" id="brand-home" type="button" aria-label="Home">Pinpoise</button>${navBtns()}</header>
   <div class="round-header"><span class="mute">No. ${noOf(g.d)} / Object ${g.r + 1} of ${RN}</span>${dots(g)}<span class="running-total"><span class="mute">Total</span> <b id="sc">${total(g)}</b><span class="mute"> / 500</span></span></div>
   <div id="stage"><canvas id="cv"></canvas></div><div class="foot fx" id="ft"><div class="object-heading"><h1 class="lede">${R.name}</h1>${legend(R)}</div><p class="small rule">Aim for the center of mass. It can lie in a gap.</p><span class="mute small" id="hint">${hint}</span><button class="btn" id="dp" disabled>Drop pin</button></div>`;
   app.scrollTop = 0;

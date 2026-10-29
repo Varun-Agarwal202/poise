@@ -1875,7 +1875,7 @@ dialog::backdrop {
     height: 20px;
   }
   .stage3 {
-    min-height: clamp(230px, 38dvh, 330px);
+    min-height: clamp(300px, 48dvh, 460px);
   }
   .density3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1908,9 +1908,10 @@ dialog::backdrop {
     bottom: 10px;
   }
   .stage3-tools button {
-    min-width: 98px;
+    min-width: 0;
     min-height: 44px;
-    padding: 7px 11px;
+    padding: 7px 14px;
+    white-space: nowrap;
   }
   .play-screen .foot {
     gap: 8px;

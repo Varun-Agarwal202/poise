@@ -43,13 +43,21 @@ function distribution(total: number, bins: number[] = Array(20).fill(0)) {
       left + (j / (curve.length - 1)) * width,
       base - value * rise,
     ],
+    peak = Math.max(1, ...bins),
+    step = width / bins.length,
+    bars = bins
+      .map((amount, i) => {
+        const height = amount ? Math.max(2, (amount / peak) * rise) : 0;
+        return `<rect class="rank-bin" x="${(left + i * step + 1).toFixed(1)}" y="${(base - height).toFixed(1)}" width="${(step - 2).toFixed(1)}" height="${height.toFixed(1)}" rx="1"/>`;
+      })
+      .join(""),
     pts = curve.map(point),
     line = pts
       .map(([x, y], j) => `${j ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`)
       .join(""),
     markerX = left + (Math.max(0, Math.min(500, total)) / 500) * width,
     markerY = base - curveAt(curve, total) * rise;
-  return `<svg class="rank-curve" data-bins="${bins.join(",")}" viewBox="0 0 260 68" role="img" aria-label="Your score marked on the reference distribution"><path class="rank-area" d="${line}L${(left + width).toFixed(1)} ${base}L${left} ${base}Z"/><path class="rank-line" d="${line}"/><line class="rank-marker" x1="${markerX.toFixed(1)}" y1="${Math.max(7, markerY - 8).toFixed(1)}" x2="${markerX.toFixed(1)}" y2="${base}"/><circle class="rank-dot" cx="${markerX.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4"/></svg>`;
+  return `<svg class="rank-curve" data-bins="${bins.join(",")}" viewBox="0 0 260 68" role="img" aria-label="Your score marked on the reference distribution">${bars}<path class="rank-area" d="${line}L${(left + width).toFixed(1)} ${base}L${left} ${base}Z"/><path class="rank-line" d="${line}"/><line class="rank-marker" x1="${markerX.toFixed(1)}" y1="${Math.max(7, markerY - 8).toFixed(1)}" x2="${markerX.toFixed(1)}" y2="${base}"/><circle class="rank-dot" cx="${markerX.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4"/></svg>`;
 }
 
 function applyRank(rec: Rec, rank: RankData) {

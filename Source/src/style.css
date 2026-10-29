@@ -1020,8 +1020,11 @@ canvas {
   color: var(--ink);
   overflow: visible;
 }
+.rank-bin {
+  fill: color-mix(in srgb, var(--ink) 22%, var(--bg));
+}
 .rank-area {
-  fill: color-mix(in srgb, var(--ink) 14%, var(--bg));
+  fill: color-mix(in srgb, var(--ink) 9%, transparent);
 }
 .rank-line {
   fill: none;

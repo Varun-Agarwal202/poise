@@ -330,9 +330,24 @@ export async function paintShare(source: HTMLElement): Promise<Blob> {
     curveX + (j / (curve.length - 1)) * curveW,
     curveBase - curve[j] * 46,
   ];
+  const peak = Math.max(1, ...bins);
+  const binW = curveW / bins.length;
   ctx.save();
   ctx.fillStyle = mute;
-  ctx.globalAlpha = 0.28;
+  ctx.globalAlpha = 0.3;
+  bins.forEach((amount, i) => {
+    const height = amount ? Math.max(2, (amount / peak) * 46) : 0;
+    ctx.beginPath();
+    ctx.roundRect(
+      curveX + i * binW + 1,
+      curveBase - height,
+      binW - 2,
+      height,
+      1,
+    );
+    ctx.fill();
+  });
+  ctx.globalAlpha = 0.14;
   ctx.beginPath();
   ctx.moveTo(curveX, curveBase);
   curve.forEach((_, j) => ctx.lineTo(...curvePoint(j)));

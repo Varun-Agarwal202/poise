@@ -144,6 +144,31 @@ const qnorm = (q: Q): Q => {
     return qnorm([c[0], c[1], c[2], 1 + d]);
   };
 
+/** Spherical interpolation along the shortest arc. */
+export function qslerp(a: Q, b: Q, t: number): Q {
+  let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+  const sign = d < 0 ? -1 : 1;
+  d = Math.abs(d);
+  const bs: Q = [b[0] * sign, b[1] * sign, b[2] * sign, b[3] * sign];
+  if (d > 0.9995)
+    return qnorm([
+      a[0] + (bs[0] - a[0]) * t,
+      a[1] + (bs[1] - a[1]) * t,
+      a[2] + (bs[2] - a[2]) * t,
+      a[3] + (bs[3] - a[3]) * t,
+    ]);
+  const theta = Math.acos(d),
+    sin = Math.sin(theta),
+    wa = Math.sin((1 - t) * theta) / sin,
+    wb = Math.sin(t * theta) / sin;
+  return [
+    a[0] * wa + bs[0] * wb,
+    a[1] * wa + bs[1] * wb,
+    a[2] * wa + bs[2] * wb,
+    a[3] * wa + bs[3] * wb,
+  ];
+}
+
 /** Maps a screen point onto a virtual sphere centered on the canvas. */
 export function trackballPoint(
   x: number,
@@ -151,7 +176,7 @@ export function trackballPoint(
   width: number,
   height: number,
 ): V3 {
-  const radius = Math.max(1, Math.min(width, height) * 0.46),
+  const radius = Math.max(1, Math.min(width, height) * 0.33),
     px = (x - width / 2) / radius,
     py = (y - height / 2) / radius,
     distance = Math.hypot(px, py);
@@ -466,6 +491,11 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     hoverFace = -1,
     renderedFaces: FaceDraw[] = [],
     phase: "aim" | "drop" | "result" = "aim",
+    qt: Q = q,
+    lastFrame = 0,
+    ink = "",
+    bgc = "",
+    mutec = "",
     startQ: Q = q,
     axis: V3 = [0, 0, 1],
     angle = 0,
@@ -540,8 +570,8 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     const base = project(pinLocal).p,
       tip = project(add(pinLocal, mul(pinNormal, 0.48))).p;
     ctx.save();
-    ctx.strokeStyle = css("--bg");
-    ctx.fillStyle = css("--ink");
+    ctx.strokeStyle = bgc;
+    ctx.fillStyle = ink;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.moveTo(...base);
@@ -556,8 +586,8 @@ function playRound(set: Shape3D[], results: Result3D[]) {
 
   const drawCenter = (point: [number, number]) => {
     ctx.save();
-    ctx.strokeStyle = css("--ink");
-    ctx.fillStyle = css("--bg");
+    ctx.strokeStyle = ink;
+    ctx.fillStyle = bgc;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(point[0], point[1], 8, 0, Math.PI * 2);
@@ -565,7 +595,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     ctx.stroke();
     ctx.beginPath();
     ctx.arc(point[0], point[1], 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = css("--ink");
+    ctx.fillStyle = ink;
     ctx.fill();
     ctx.restore();
   };
@@ -596,6 +626,22 @@ function playRound(set: Shape3D[], results: Result3D[]) {
         showResult();
       }
     }
+    let easing = false;
+    if (phase !== "drop") {
+      const dt = Math.min(0.05, Math.max(0.001, (time - lastFrame) / 1000)),
+        gap =
+          1 -
+          Math.abs(q[0] * qt[0] + q[1] * qt[1] + q[2] * qt[2] + q[3] * qt[3]);
+      if (RM || gap < 1e-7) q = qt;
+      else {
+        q = qslerp(q, qt, 1 - Math.exp(-dt * 24));
+        easing = true;
+      }
+    }
+    lastFrame = time;
+    ink = css("--ink");
+    bgc = css("--bg");
+    mutec = css("--mute");
     ctx.clearRect(0, 0, W, H);
     renderedFaces = faces();
     for (const face of renderedFaces) {
@@ -604,13 +650,13 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       ctx.closePath();
       ctx.fillStyle = shade(face.rgb, face.normal);
       ctx.fill();
-      ctx.strokeStyle = css("--ink");
+      ctx.strokeStyle = ink;
       ctx.globalAlpha = 0.78;
       ctx.lineWidth = 1.15;
       ctx.stroke();
       ctx.globalAlpha = 1;
       if (tool === "pin" && face.id === hoverFace && phase === "aim") {
-        ctx.strokeStyle = css("--ink");
+        ctx.strokeStyle = ink;
         ctx.lineWidth = 2.5;
         ctx.stroke();
       }
@@ -620,7 +666,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       const cp = project(shape.center).p,
         pp = project(pinLocal).p;
       ctx.save();
-      ctx.strokeStyle = css("--ink");
+      ctx.strokeStyle = ink;
       ctx.setLineDash([5, 5]);
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -631,7 +677,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       drawCenter(cp);
     } else if (tool === "pin" && !pinLocal) {
       ctx.save();
-      ctx.strokeStyle = css("--mute");
+      ctx.strokeStyle = mutec;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(cursor[0] - 7, cursor[1]);
@@ -641,7 +687,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       ctx.stroke();
       ctx.restore();
     }
-    if (phase === "drop") raf = requestAnimationFrame(render);
+    if (phase === "drop" || easing) raf = requestAnimationFrame(render);
   };
 
   const invalidate = () => {
@@ -751,7 +797,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     if (phase !== "aim") return;
     const [x, y] = localPoint(event);
     canvas.setPointerCapture(event.pointerId);
-    down = { x, y, q, moved: false, tool };
+    down = { x, y, q: qt, moved: false, tool };
     cursor = [x, y];
     if (tool === "pin") place(x, y);
   };
@@ -771,7 +817,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       dy = y - down.y;
     if (Math.hypot(dx, dy) > 5) down.moved = true;
     if (down.moved) {
-      q = qmul(trackballRotation(down.x, down.y, x, y, W, H), down.q);
+      qt = qmul(trackballRotation(down.x, down.y, x, y, W, H), down.q);
       renderedFaces = [];
       setHint(
         pinLocal
@@ -809,7 +855,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
           : [1, 0, 0];
       const direction =
         event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
-      q = qmul(qaxis(axis, 0.12 * direction), q);
+      qt = qmul(qaxis(axis, 0.12 * direction), qt);
       renderedFaces = [];
       invalidate();
     } else if (tool === "pin" && event.key === "ArrowLeft")
@@ -870,6 +916,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     pinButton.disabled = true;
     drop.disabled = true;
     pinScreen = project(pinLocal).p;
+    q = qt;
     startQ = q;
     const offset = qrot(q, sub(shape.center, pinLocal)),
       lateral = Math.hypot(offset[0], offset[2]);

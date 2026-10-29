@@ -1583,6 +1583,8 @@ dialog::backdrop {
     order: 3;
     flex: none;
     gap: 9px;
+    align-self: stretch;
+    width: 100%;
   }
   .foot3 .object-heading {
     gap: 7px;

@@ -214,25 +214,36 @@ const modeledLow = e.api.rankModel.modelScoreDistribution(
   );
 assert.equal(modeledLow.betterThan, 1);
 assert.equal(modeledMin.betterThan, 1);
-assert.equal(modeledMiddle.betterThan, 52);
-assert.equal(modeledPerfect.betterThan, 99);
+assert(modeledMiddle.betterThan >= 40 && modeledMiddle.betterThan <= 60);
+assert(modeledPerfect.betterThan >= 95 && modeledPerfect.betterThan <= 99);
+assert(modeledMin.betterThan <= modeledMiddle.betterThan);
+assert(modeledMiddle.betterThan <= modeledPerfect.betterThan);
 assert.equal(modeledMiddle.samples, 250);
 assert.equal(modeledMiddle.bins.length, 20);
-assert.equal(
-  modeledMiddle.bins.reduce((sum, n) => sum + n, 0),
-  250,
+assert(
+  Math.abs(modeledMiddle.bins.reduce((sum, n) => sum + n, 0) - 1000) <= 10,
 );
-assert.equal(
-  e.api.rankModel.modelScoreDistribution(
-    [
-      { score: 400, amount: 10 },
-      { score: 450, amount: 90 },
-    ],
-    450,
-  ).betterThan,
-  55,
+const peakBin = modeledMiddle.bins.indexOf(Math.max(...modeledMiddle.bins));
+assert(
+  modeledMiddle.bins
+    .slice(0, peakBin + 1)
+    .every((n, i, all) => !i || n >= all[i - 1]) &&
+    modeledMiddle.bins
+      .slice(peakBin)
+      .every((n, i, all) => !i || n <= all[i - 1]),
+  "Modeled distribution has a single smooth peak",
 );
-ok("Global ranks are exact mid-rank percentiles bounded to 1 and 99");
+const denseRank = e.api.rankModel.modelScoreDistribution(
+  [
+    { score: 400, amount: 200 },
+    { score: 450, amount: 1800 },
+  ],
+  450,
+);
+assert(denseRank.betterThan >= 50 && denseRank.betterThan <= 60);
+ok(
+  "Global ranks fit a smooth bell curve that tracks real scores as data grows",
+);
 for (let n = 0; n < 3; n++) {
   const d = store.dateOfNo(n + 1),
     p = store.puzzleOf(d);

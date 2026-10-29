@@ -1020,8 +1020,14 @@ canvas {
   color: var(--ink);
   overflow: visible;
 }
-.rank-bin {
-  fill: color-mix(in srgb, var(--ink) 24%, transparent);
+.rank-area {
+  fill: color-mix(in srgb, var(--ink) 14%, var(--bg));
+}
+.rank-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 55%, var(--bg));
+  stroke-width: 1.5;
+  stroke-linejoin: round;
 }
 .rank-marker {
   stroke: currentColor;

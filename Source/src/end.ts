@@ -14,6 +14,7 @@ import {
   submitRank,
   type RankData,
 } from "./rank";
+import { curveAt, smoothCurve } from "./rank-model";
 import { track } from "./analytics";
 
 const siteHost = (
@@ -36,20 +37,19 @@ function distribution(total: number, bins: number[] = Array(20).fill(0)) {
   const left = 8,
     width = 244,
     base = 61,
-    max = Math.max(1, ...bins),
-    gap = 2,
-    barWidth = width / bins.length - gap,
-    bars = bins
-      .map((amount, i) => {
-        const height = amount ? Math.max(3, (amount / max) * 46) : 0;
-        return `<rect class="rank-bin" x="${(left + i * (width / bins.length)).toFixed(1)}" y="${(base - height).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${height.toFixed(1)}" rx="1"/>`;
-      })
+    rise = 46,
+    curve = smoothCurve(bins),
+    point = (value: number, j: number): [number, number] => [
+      left + (j / (curve.length - 1)) * width,
+      base - value * rise,
+    ],
+    pts = curve.map(point),
+    line = pts
+      .map(([x, y], j) => `${j ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`)
       .join(""),
     markerX = left + (Math.max(0, Math.min(500, total)) / 500) * width,
-    bucket = Math.min(19, Math.floor(total / 25)),
-    markerHeight = bins[bucket] ? Math.max(3, (bins[bucket] / max) * 46) : 3,
-    markerY = base - markerHeight;
-  return `<svg class="rank-curve" data-bins="${bins.join(",")}" viewBox="0 0 260 68" role="img" aria-label="Your score marked on the reference distribution">${bars}<line class="rank-marker" x1="${markerX.toFixed(1)}" y1="${Math.max(7, markerY - 8).toFixed(1)}" x2="${markerX.toFixed(1)}" y2="61"/><circle class="rank-dot" cx="${markerX.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4"/></svg>`;
+    markerY = base - curveAt(curve, total) * rise;
+  return `<svg class="rank-curve" data-bins="${bins.join(",")}" viewBox="0 0 260 68" role="img" aria-label="Your score marked on the reference distribution"><path class="rank-area" d="${line}L${(left + width).toFixed(1)} ${base}L${left} ${base}Z"/><path class="rank-line" d="${line}"/><line class="rank-marker" x1="${markerX.toFixed(1)}" y1="${Math.max(7, markerY - 8).toFixed(1)}" x2="${markerX.toFixed(1)}" y2="${base}"/><circle class="rank-dot" cx="${markerX.toFixed(1)}" cy="${markerY.toFixed(1)}" r="4"/></svg>`;
 }
 
 function applyRank(rec: Rec, rank: RankData) {

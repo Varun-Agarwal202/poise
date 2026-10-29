@@ -2,7 +2,7 @@ import { track } from "./analytics";
 import { flag } from "./flags";
 import { copy, css, gi, say } from "./dom";
 import { TODAY, dnOf, noOf, dateOfNo, type Rec } from "./store";
-
+import { curveAt, smoothCurve } from "./rank-model";
 /** A friend's result, decoded from a `#vs=<puzzleNo>.<p1>.<p2>.<p3>.<p4>.<p5>` link. Contains scores only, never pin positions. */
 export interface Challenge {
   n: number;
@@ -325,25 +325,36 @@ export async function paintShare(source: HTMLElement): Promise<Blob> {
     .split(",")
     .map(Number)
     .filter(Number.isFinite);
-  const peak = Math.max(1, ...bins);
-  const gap = 2;
-  const binW = curveW / 20;
-  ctx.fillStyle = mute;
+  const curve = smoothCurve(bins);
+  const curvePoint = (j: number): [number, number] => [
+    curveX + (j / (curve.length - 1)) * curveW,
+    curveBase - curve[j] * 46,
+  ];
   ctx.save();
-  ctx.globalAlpha = 0.35;
-  bins.forEach((amount, i) => {
-    const height = amount ? Math.max(3, (amount / peak) * 46) : 0;
-    ctx.beginPath();
-    ctx.roundRect(curveX + i * binW, curveBase - height, binW - gap, height, 1);
-    ctx.fill();
+  ctx.fillStyle = mute;
+  ctx.globalAlpha = 0.28;
+  ctx.beginPath();
+  ctx.moveTo(curveX, curveBase);
+  curve.forEach((_, j) => ctx.lineTo(...curvePoint(j)));
+  ctx.lineTo(curveX + curveW, curveBase);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 0.7;
+  ctx.strokeStyle = mute;
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  curve.forEach((_, j) => {
+    const [x, y] = curvePoint(j);
+    if (j) ctx.lineTo(x, y);
+    else ctx.moveTo(x, y);
   });
+  ctx.stroke();
   ctx.restore();
   const numericTotal = Number(total) || 0;
-  const markerX = curveX + (numericTotal / 500) * curveW;
-  const markerBucket = Math.min(19, Math.floor(numericTotal / 25));
-  const markerAmount = bins[markerBucket] || 0;
-  const markerY =
-    curveBase - (markerAmount ? Math.max(3, (markerAmount / peak) * 46) : 3);
+  const markerX =
+    curveX + (Math.min(500, Math.max(0, numericTotal)) / 500) * curveW;
+  const markerY = curveBase - curveAt(curve, numericTotal) * 46;
   ctx.strokeStyle = ink;
   ctx.beginPath();
   ctx.moveTo(markerX, Math.max(scoreTop + 28, markerY - 8));

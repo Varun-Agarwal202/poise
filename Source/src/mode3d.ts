@@ -521,7 +521,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     canvas.style.width = W + "px";
     canvas.style.height = H + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    scale = Math.min(W, H) / (shape.extent * 2.8);
+    scale = Math.min(W, H) / (shape.extent * 2.15);
     if (!cursor[0]) cursor = [W / 2, H / 2];
     invalidate();
   };

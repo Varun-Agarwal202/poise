@@ -153,7 +153,7 @@ export function trackballPoint(
 ): V3 {
   const radius = Math.max(1, Math.min(width, height) * 0.46),
     px = (x - width / 2) / radius,
-    py = (height / 2 - y) / radius,
+    py = (y - height / 2) / radius,
     distance = Math.hypot(px, py);
   if (distance >= 1) return [px / distance, py / distance, 0];
   return [px, py, Math.sqrt(1 - px * px - py * py)];
@@ -597,21 +597,6 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       }
     }
     ctx.clearRect(0, 0, W, H);
-    ctx.save();
-    ctx.globalAlpha = 0.16;
-    ctx.fillStyle = css("--ink");
-    ctx.beginPath();
-    ctx.ellipse(
-      W / 2,
-      H * 0.78,
-      Math.min(W * 0.24, 150),
-      16,
-      0,
-      0,
-      Math.PI * 2,
-    );
-    ctx.fill();
-    ctx.restore();
     renderedFaces = faces();
     for (const face of renderedFaces) {
       ctx.beginPath();
@@ -625,11 +610,8 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       ctx.stroke();
       ctx.globalAlpha = 1;
       if (tool === "pin" && face.id === hoverFace && phase === "aim") {
-        ctx.strokeStyle = css("--bg");
-        ctx.lineWidth = 3;
-        ctx.stroke();
         ctx.strokeStyle = css("--ink");
-        ctx.lineWidth = 1.25;
+        ctx.lineWidth = 2.5;
         ctx.stroke();
       }
     }

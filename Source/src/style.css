@@ -328,7 +328,7 @@ h3 {
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: var(--r-control);
-  background: color-mix(in srgb, var(--card) 72%, transparent);
+  background: color-mix(in srgb, var(--card) 72%, var(--bg));
 }
 .lk {
   border: 0;
@@ -364,15 +364,12 @@ h3 {
   padding: 12px 24px;
   font-size: 1.0625rem;
   font-weight: 800;
-  box-shadow: 0 3px 0 color-mix(in srgb, var(--btn) 70%, #000);
   transition:
-    transform 0.16s ease-out,
-    box-shadow 0.16s ease-out,
+    transform 0.12s ease-out,
     opacity 0.16s ease-out;
 }
 .btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--btn) 70%, #000);
+  transform: translateY(1px);
 }
 .btn.ghost {
   background: transparent;
@@ -389,7 +386,7 @@ h3 {
   padding: 10px 16px 10px 10px;
   border: 1px solid var(--line);
   border-radius: var(--r-control);
-  background: color-mix(in srgb, var(--card) 56%, transparent);
+  background: color-mix(in srgb, var(--card) 56%, var(--bg));
   color: var(--ink);
   text-align: left;
   transition:
@@ -422,7 +419,6 @@ h3 {
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: transform 0.16s ease-out;
 }
 .mode3d-mark circle {
   fill: var(--accent);
@@ -451,10 +447,7 @@ h3 {
 }
 @media (hover: hover) and (pointer: fine) {
   .mode3d-link:hover {
-    background: color-mix(in srgb, var(--card) 88%, transparent);
-  }
-  .mode3d-link:hover .mode3d-mark svg {
-    transform: translateY(-2px) rotate(-2deg);
+    background: color-mix(in srgb, var(--card) 88%, var(--bg));
   }
 }
 .mode3d-screen {
@@ -479,8 +472,7 @@ h3 {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--r-sheet);
-  background: color-mix(in srgb, var(--card) 46%, transparent);
-  box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--bg) 76%, transparent);
+  background: color-mix(in srgb, var(--card) 46%, var(--bg));
 }
 #cv3 {
   width: 100%;
@@ -506,7 +498,6 @@ h3 {
   border: 1px solid var(--line);
   border-radius: var(--r-control);
   background: var(--bg);
-  box-shadow: 0 7px 20px color-mix(in srgb, var(--ink) 12%, transparent);
   transform: translateX(-50%);
   transition: opacity 0.14s ease-out;
 }
@@ -679,8 +670,7 @@ h3 {
   position: relative;
   border: 1px solid var(--line);
   border-radius: var(--r-sheet);
-  background-color: color-mix(in srgb, var(--card) 46%, transparent);
-  box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--bg) 76%, transparent);
+  background-color: color-mix(in srgb, var(--card) 46%, var(--bg));
 }
 .play-screen #stage {
   grid-column: 2;
@@ -715,8 +705,6 @@ canvas {
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
   line-height: 1.4;
-  letter-spacing: 0.055em;
-  text-transform: uppercase;
 }
 .home-foot .edition {
   display: flex;
@@ -792,15 +780,13 @@ canvas {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: var(--r-sheet);
-  background: color-mix(in srgb, var(--card) 46%, transparent);
+  background: color-mix(in srgb, var(--card) 46%, var(--bg));
 }
 .lg-title {
   margin-bottom: 10px;
 }
 .lg-title b {
   font-size: 0.875rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 .lg {
   display: grid;
@@ -875,7 +861,7 @@ canvas {
   .lg-wrap {
     padding: 18px;
     border: 1.5px solid var(--edge);
-    background: color-mix(in srgb, var(--card) 72%, transparent);
+    background: color-mix(in srgb, var(--card) 72%, var(--bg));
   }
   .lg-title {
     margin-bottom: 14px;
@@ -1375,8 +1361,6 @@ dialog::backdrop {
   color: var(--mute);
   font-size: 0.78rem;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 .auth-divider::before,
 .auth-divider::after {
@@ -1402,7 +1386,7 @@ dialog::backdrop {
 .auth-modes button[aria-pressed="true"] {
   background: var(--card);
   color: var(--ink);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 .signin .btn {
   width: 100%;
@@ -1433,8 +1417,6 @@ dialog::backdrop {
 .sheet-section-head h3 {
   color: var(--mute);
   font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 .keyboard {
   padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
@@ -2018,11 +2000,6 @@ dialog::backdrop {
   *::after {
     animation: none !important;
     transition: none !important;
-  }
-}
-@media (hover: hover) and (pointer: fine) {
-  .btn:hover {
-    transform: translateY(-1px);
   }
 }
 @media (forced-colors: active) {

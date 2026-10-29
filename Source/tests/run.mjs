@@ -213,12 +213,26 @@ const modeledLow = e.api.rankModel.modelScoreDistribution(
     500,
   );
 assert.equal(modeledLow.betterThan, 1);
-assert(modeledMin.betterThan > modeledLow.betterThan);
-assert(modeledMiddle.betterThan > modeledMin.betterThan);
+assert.equal(modeledMin.betterThan, 1);
+assert.equal(modeledMiddle.betterThan, 52);
 assert.equal(modeledPerfect.betterThan, 99);
 assert.equal(modeledMiddle.samples, 250);
 assert.equal(modeledMiddle.bins.length, 20);
-ok("Global ranks smooth missing scores and stay anchored at 0 and 500");
+assert.equal(
+  modeledMiddle.bins.reduce((sum, n) => sum + n, 0),
+  250,
+);
+assert.equal(
+  e.api.rankModel.modelScoreDistribution(
+    [
+      { score: 400, amount: 10 },
+      { score: 450, amount: 90 },
+    ],
+    450,
+  ).betterThan,
+  55,
+);
+ok("Global ranks are exact mid-rank percentiles bounded to 1 and 99");
 for (let n = 0; n < 3; n++) {
   const d = store.dateOfNo(n + 1),
     p = store.puzzleOf(d);

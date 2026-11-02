@@ -523,6 +523,7 @@ h3 {
   background: transparent;
   color: var(--mute);
   font-weight: 750;
+  white-space: nowrap;
   transition:
     background 0.2s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.2s cubic-bezier(0.22, 1, 0.36, 1);
@@ -2178,9 +2179,10 @@ dialog::backdrop {
 }
 .arch-range {
   position: relative;
-  flex: 1 0 auto;
+  flex: 1 1 auto;
   min-height: 390px;
   height: clamp(390px, 62vh, 690px);
+  max-height: 690px;
   overflow: hidden;
   border: 0 !important;
   border-radius: 6px !important;
@@ -2531,6 +2533,167 @@ dialog::backdrop {
   #arch-back {
     grid-column: 1 / -1;
   }
+}
+
+/* A user preference may request the wide home composition, but a narrow
+   viewport always wins. Keeping two columns here crushed the daily preview on
+   small phones and made the setting look like a broken layout. */
+@media (max-width: 639px) {
+  :root[data-home-layout="desktop"] #app.home-screen {
+    grid-template-areas: "header" "intro" "stage" "caption" "foot";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(140px, 1fr) auto auto;
+  }
+  :root[data-home-layout="desktop"] .home-screen .intro h1 {
+    font-size: clamp(2.75rem, 14vw, 4.25rem);
+  }
+  :root[data-home-layout="desktop"] .home-screen .pitch {
+    font-size: 1.15rem;
+  }
+  :root[data-home-layout="desktop"] .home-screen #stage {
+    min-height: 140px;
+  }
+}
+
+/* Short, wide touch screens need a game layout, not a vertically scaled phone
+   page. The range and controls share the remaining row on landscape phones
+   and small tablets, while portrait keeps the simpler stacked composition. */
+@media (min-width: 760px) and (max-height: 620px) {
+  #app.archery-screen {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(210px, 28%);
+    grid-template-rows: auto auto minmax(250px, 1fr);
+    column-gap: 20px;
+  }
+  .archery-screen .arch-header,
+  .archery-screen .arch-hud {
+    grid-column: 1 / -1;
+  }
+  .archery-screen .arch-range {
+    grid-column: 1;
+    grid-row: 3;
+    min-height: 250px;
+    height: calc(100dvh - 175px);
+    max-height: none;
+  }
+  .archery-screen .arch-bottom {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 0;
+  }
+  .archery-screen #arch-help span {
+    display: none;
+  }
+  .archery-screen .arch-shot-controls {
+    min-height: 0;
+  }
+}
+
+/* Daily Play also needs a true landscape composition below the desktop
+   breakpoint. A stacked phone layout leaves the fixed gameplay canvas behind
+   the density panel on short screens, so the information becomes a compact
+   left rail and the whole right side remains an unobstructed play surface. */
+@media (min-width: 560px) and (max-width: 959px) and (max-height: 500px) {
+  #app.play-screen {
+    --pad: 12px;
+    display: grid;
+    max-width: none;
+    grid-template-columns: minmax(220px, 30%) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 8px 16px;
+  }
+  .play-screen .site-header {
+    position: relative;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-height: 44px;
+    padding-bottom: 8px;
+  }
+  .play-screen .site-header .primary-nav {
+    position: static;
+  }
+  .play-screen .round-header {
+    grid-column: 1;
+    grid-row: 2;
+    gap: 5px 10px;
+  }
+  .play-screen #stage {
+    grid-column: 2;
+    grid-row: 2 / 4;
+    min-height: 0;
+  }
+  .play-screen .foot {
+    grid-column: 1;
+    grid-row: 3;
+    min-height: 0;
+    gap: 7px;
+    padding: 0;
+  }
+  .play-screen .object-heading {
+    gap: 5px;
+  }
+  .play-screen .lede {
+    font-size: 1.25rem;
+  }
+  .play-screen .lg-wrap {
+    padding: 6px;
+  }
+  .play-screen .lg-title,
+  .play-screen .rule,
+  .play-screen #hint {
+    display: none;
+  }
+  .play-screen .lg {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .play-screen .lg-item {
+    gap: 3px;
+  }
+  .play-screen .lg-name {
+    grid-template-columns: 14px minmax(0, 1fr);
+    gap: 4px;
+  }
+  .play-screen .lg-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+  }
+  .play-screen .lg-item b {
+    font-size: 0.7rem;
+  }
+  .play-screen .lg-item em {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+  }
+  .play-screen .lg-track {
+    height: 4px;
+  }
+  .play-screen .lg-density {
+    align-self: start;
+    font-size: 0.65rem;
+  }
+  .play-screen .lg-unit {
+    display: none;
+  }
+  .play-screen #dp {
+    min-height: 44px;
+    padding-block: 8px;
+  }
+}
+
+/* Prevent game canvases and their control columns from forcing horizontal
+   overflow when browser text sizing or a split-screen window narrows them. */
+.play-screen > *,
+.mode3d-screen > *,
+.archery-screen > *,
+.archery-results > * {
+  min-width: 0;
 }
 @media (max-width: 360px) {
   .arch-result-target {

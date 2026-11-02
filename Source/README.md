@@ -13,6 +13,12 @@ npm run build
 
 Development: http://127.0.0.1:5174. Build output: dist/. Tests: jsdom plus native canvas. Use a modern Node release supported by Vite 6; verified with Node 26.4.0.
 
+### Responsive layout QA
+
+The home, 2D, 3D, Archery, and results screens must remain usable without horizontal overflow under browser text scaling and split-screen resizing. A saved desktop home-layout preference yields to the single-column layout below 640px. On short landscape touch screens (at least 760px wide and at most 620px tall), Archery places its controls beside the range so the play area remains usable.
+
+Before release, inspect representative phone portrait (320–430px), phone landscape (760–930px wide and no more than 620px tall), tablet portrait and landscape (768–1366px), and desktop (1280px and wider) viewports. Check each game mode at default and enlarged browser text, including home navigation, canvas interaction, controls, result screens, and rotation or split-screen transitions.
+
 ### Daily shape editions — November 3, 2026 rollout
 
 Generator versions are date-bound in `src/store.ts` and `src/gen.ts`. Preserve released recipes:

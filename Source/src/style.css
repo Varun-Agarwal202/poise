@@ -2087,3 +2087,621 @@ dialog::backdrop {
   background: #fff;
   margin-left: 8px;
 }
+
+/* Archery: a first-person range, followed by a three-target score sheet. */
+#app.archery-screen,
+#app.archery-results {
+  max-width: 1180px;
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+#app.archery-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.arch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.arch-header h1,
+.arch-header > span {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0;
+}
+.arch-header .brand-home {
+  font-size: 1rem;
+  font-weight: 800;
+}
+.arch-text-btn {
+  background: none;
+  border: 0;
+  color: var(--mute);
+  cursor: pointer;
+  padding: 12px 4px;
+  min-height: 44px;
+  font: inherit;
+  font-size: 0.85rem;
+}
+.arch-text-btn:hover {
+  color: var(--ink);
+}
+.arch-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+.arch-hud > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+#arch-shots {
+  display: flex;
+  gap: 6px;
+}
+#arch-shots i {
+  width: 6px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--ink);
+  transform: rotate(25deg);
+}
+#arch-shots i.used {
+  opacity: 0.2;
+}
+#arch-wind {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#arch-wind svg {
+  width: 23px;
+  height: 23px;
+}
+#arch-total {
+  font-size: 1.25rem;
+}
+#arch-total small {
+  color: var(--mute);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.arch-range {
+  position: relative;
+  flex: 1 0 auto;
+  min-height: 390px;
+  height: clamp(390px, 62vh, 690px);
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: var(--bg) !important;
+  touch-action: none;
+}
+.archery-screen #cv {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  position: absolute;
+  touch-action: none;
+  cursor: crosshair;
+}
+.arch-range-caption {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  color: var(--mute);
+  font-size: 0.75rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+#arch-impact {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  background: var(--card);
+  color: var(--ink);
+  padding: 14px 30px;
+  border-radius: 4px;
+  text-align: center;
+  box-shadow: 0 6px 22px #23372720;
+  pointer-events: none;
+}
+#arch-impact[hidden],
+.arch-draw[hidden] {
+  display: none;
+}
+#arch-impact-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+#arch-impact-score {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+#arch-impact-detail {
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+.arch-draw {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  width: 130px;
+  color: var(--ink);
+  pointer-events: none;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.arch-draw > div {
+  margin-top: 7px;
+  height: 5px;
+  background: var(--line);
+  overflow: hidden;
+  border-radius: 2px;
+}
+.arch-draw i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  background: var(--ink);
+}
+.arch-bottom {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 32px;
+  padding-top: 20px;
+  align-items: center;
+}
+#arch-status {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 0 0 8px;
+}
+#arch-help {
+  color: var(--mute);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin: 0;
+}
+#arch-help span {
+  display: block;
+}
+.arch-shot-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.arch-shot-controls label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.arch-shot-controls input {
+  width: 100%;
+  min-height: 36px;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+.arch-shot-controls .btn {
+  min-height: 44px;
+  font-size: 0.9rem;
+}
+.arch-shot-controls [hidden] {
+  display: none;
+}
+.arch-text-btn:focus-visible,
+.arch-shot-controls input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.arch-result-intro {
+  text-align: center;
+  padding: 34px 0 30px;
+}
+.arch-result-intro h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.035em;
+  line-height: 1;
+  margin: 0 0 16px;
+}
+.arch-final-score {
+  font-size: clamp(4rem, 8vw, 6rem);
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-weight: 800;
+  margin: 0 0 16px;
+}
+.arch-final-score span {
+  font-size: 1.4rem;
+  color: var(--mute);
+  letter-spacing: 0;
+  font-weight: 600;
+}
+.arch-result-intro > p:last-child {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--mute);
+}
+.arch-result-targets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+.arch-result-target-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.arch-result-target-title h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+.arch-result-target small {
+  font-size: 0.75rem;
+  color: var(--mute);
+  font-weight: 500;
+}
+.arch-result-target canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.arch-result-target ol {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.arch-result-target li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.arch-result-target li > span:nth-child(2) {
+  color: var(--mute);
+}
+.arch-result-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 22px 0;
+  font-size: 0.75rem;
+  color: var(--mute);
+}
+.arch-result-key i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #b34d33;
+}
+.arch-result-key i:nth-child(2) {
+  background: transparent;
+  border: 2px solid #438672;
+  margin-left: 12px;
+}
+.arch-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.arch-result-actions .btn {
+  min-width: 170px;
+}
+#arch-copy-status {
+  text-align: center;
+  min-height: 1.5em;
+  margin: 12px 0 0;
+}
+@media (max-width: 640px) {
+  #app.archery-screen {
+    padding: 12px 16px 20px;
+  }
+  .arch-header {
+    gap: 8px;
+  }
+  .arch-header h1,
+  .arch-header > span {
+    font-size: 0.8rem;
+  }
+  .arch-hud {
+    font-size: 0.75rem;
+    gap: 8px;
+    padding: 14px 0;
+  }
+  .arch-hud > div:first-child {
+    gap: 10px;
+  }
+  #arch-shots {
+    gap: 4px;
+  }
+  #arch-shots i {
+    width: 4px;
+    height: 14px;
+  }
+  #arch-wind {
+    gap: 4px;
+  }
+  #arch-wind svg {
+    width: 19px;
+  }
+  #arch-total {
+    font-size: 1rem;
+  }
+  .arch-range {
+    min-height: 360px;
+    height: clamp(360px, 58dvh, 560px);
+  }
+  .arch-range-caption {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    font-size: 0.65rem;
+  }
+  .arch-bottom {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding-top: 16px;
+  }
+  .arch-shot-controls {
+    grid-template-columns: 1fr 140px;
+    column-gap: 20px;
+    align-items: center;
+  }
+  .arch-shot-controls label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .arch-shot-controls input {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .arch-shot-controls .btn {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  #arch-help span {
+    font-size: 0.7rem;
+  }
+  #arch-impact {
+    bottom: 16px;
+    padding: 12px 20px;
+  }
+  .arch-result-targets {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .arch-result-target {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    column-gap: 16px;
+  }
+  .arch-result-target-title {
+    grid-column: 1 / -1;
+  }
+  .arch-result-target ol {
+    margin-top: 0;
+    align-self: center;
+  }
+  .arch-result-intro {
+    padding-top: 28px;
+  }
+  .arch-result-intro > p:last-child {
+    max-width: 30ch;
+    margin-inline: auto;
+    line-height: 1.5;
+  }
+  .arch-result-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .arch-result-actions .btn {
+    min-width: 0;
+  }
+  #arch-back {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 360px) {
+  .arch-result-target {
+    grid-template-columns: 110px 1fr;
+  }
+  #arch-shots {
+    display: none;
+  }
+}
+
+.arch-sight-wind {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.arch-sight-wind svg {
+  width: 20px;
+  height: 20px;
+}
+.arch-sight-wind[hidden] {
+  display: none;
+}
+.arch-shot-controls #arch-adjust {
+  padding: 8px 4px;
+  min-height: 36px;
+}
+.arch-shot-controls input:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+@media (max-width: 640px) {
+  .arch-shot-controls #arch-adjust {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: end;
+  }
+}
+/* Reserve the re-aim row so locking the sight never shifts the range. */
+.arch-shot-controls {
+  min-height: 152px;
+  align-content: start;
+}
+@media (max-width: 640px) {
+  .arch-shot-controls {
+    min-height: 108px;
+  }
+}
+
+/* Power belongs beside the bow: a moving instrument, not a form input. */
+.arch-power-dial {
+  position: absolute;
+  left: 22px;
+  bottom: 20px;
+  width: 180px;
+  padding: 12px 12px 4px;
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.arch-power-dial[hidden] {
+  display: none;
+}
+.arch-power-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.arch-power-dial svg {
+  display: block;
+  width: 100%;
+  height: 115px;
+  overflow: visible;
+}
+.arch-power-track {
+  stroke: var(--line);
+  stroke-width: 8;
+}
+#arch-power-fill {
+  stroke: var(--ink);
+  stroke-width: 8;
+}
+.arch-power-ticks {
+  stroke: var(--mute);
+  stroke-width: 1.5;
+}
+#arch-power-needle {
+  transform-origin: 90px 110px;
+  stroke: var(--ink);
+  fill: var(--ink);
+  stroke-width: 2;
+}
+.arch-power-dial text {
+  fill: var(--mute);
+  font:
+    600 11px "Bricolage Grotesque",
+    sans-serif;
+  text-anchor: middle;
+}
+.arch-power-dial output {
+  position: absolute;
+  top: 83px;
+  left: 0;
+  width: 100%;
+  font-size: 1.65rem;
+  line-height: 1;
+  font-weight: 800;
+}
+#arch-meter-fire {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--bg);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+#arch-meter-pause {
+  min-height: 44px;
+  padding: 8px;
+  border: 0;
+  background: none;
+  color: var(--mute);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+#arch-meter-fire:focus-visible,
+#arch-meter-pause:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.arch-shot-controls {
+  min-height: 88px;
+  align-content: start;
+}
+@media (max-width: 640px) {
+  .arch-power-dial {
+    width: 158px;
+    left: 10px;
+    bottom: 10px;
+    padding: 10px 10px 0;
+  }
+  .arch-power-dial svg {
+    height: 98px;
+  }
+  .arch-power-dial output {
+    top: 73px;
+    font-size: 1.4rem;
+  }
+  .arch-shot-controls {
+    display: flex;
+    flex-direction: column;
+    min-height: 88px;
+  }
+  .arch-shot-controls #arch-adjust {
+    align-self: flex-end;
+  }
+}

@@ -1,5 +1,6 @@
 import { famsFor, famsFor2, twistFor, TW, type Twist } from "./gen";
 import { uniqueIds, UNIQUE_START, LAST_DAY_INDEX } from "./unique";
+import { NOVEL_START } from "./catalog-v7";
 
 export type Mode = "daily" | "archive";
 export interface RoundSave {
@@ -61,7 +62,7 @@ export function puzzleOf(d: string): Puzzle {
   if (n >= UNIQUE_START) {
     // The catalogue owns the silhouette. A random cutout must never change it.
     if (t === "holes") t = "classic";
-    const version = n >= MATERIAL_V5 ? "p6" : "p4";
+    const version = n >= NOVEL_START ? "p7" : n >= MATERIAL_V5 ? "p6" : "p4";
     return { seed: `${version}|poise${d}|${t}`, fams: uniqueIds(n), tw: TW[t] };
   }
   return { seed: `p2|poise${d}|${t}`, fams: famsFor2(n), tw: TW[t] };

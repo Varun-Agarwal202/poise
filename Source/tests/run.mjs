@@ -4,7 +4,7 @@ import { createCanvas } from "@napi-rs/canvas";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom'; export * as rank from './src/rank'; export * as rankModel from './src/rank-model'; export * as auth from './src/auth'; export * as mode3d from './src/mode3d';`;
+const entry = `export * as gen from './src/gen'; export * as unique from './src/unique'; export * as catalogue from './src/forms-v4'; export * as legacy from './tests/fixtures/gen-v2'; export * as store from './src/store'; export * as game from './src/game'; export * as stage from './src/stage'; export * as home from './src/home'; export * as physics from './src/physics'; export * as sharing from './src/share'; export * as dom from './src/dom'; export * as rank from './src/rank'; export * as rankModel from './src/rank-model'; export * as auth from './src/auth'; export * as mode3d from './src/mode3d'; export * as archeryInput from './src/archery-input'; export * as archery from './src/archery'; export * as ballistics from './src/archery-ballistics'; export * as archeryScene from './src/archery-scene'; export * as archeryPower from './src/archery-power'; export * as novel from './src/catalog-v7'; export * as volumes from './src/catalog3d-v2';`;
 const compiled = await bundle({
   stdin: { contents: entry, resolveDir: process.cwd(), loader: "ts" },
   bundle: true,
@@ -152,6 +152,16 @@ function env(date = "2026-10-25", save, live) {
 function ok(label) {
   checks.push(label);
   console.log("PASS", label);
+}
+if (process.env.POISE_TEST_SCOPE === "archery") {
+  runArcheryChecks();
+  console.log(`\n${checks.length} archery checks passed.`);
+  process.exit(0);
+}
+if (process.env.POISE_TEST_SCOPE === "diversity") {
+  runDiversityChecks();
+  console.log(`\n${checks.length} diversity checks passed.`);
+  process.exit(0);
 }
 const e = env(),
   { gen, legacy, store } = e.api;
@@ -370,7 +380,10 @@ for (let n = 3; n <= e.api.unique.LAST_DAY_INDEX; n++) {
   if ((n - 3) % 200 === 0)
     console.log(`Checking catalogue: ${n - 3} / 1,200 days`);
   const p = store.puzzleOf(store.dateOfNo(n + 1));
-  assert.equal(p.seed.startsWith(n >= 6 ? "p6|" : "p4|"), true);
+  assert.equal(
+    p.seed.startsWith(n >= 13 ? "p7|" : n >= 6 ? "p6|" : "p4|"),
+    true,
+  );
   assert.equal(new Set(p.fams).size, 5);
   const dailyRatios = [],
     dailyLayouts = [],
@@ -1036,4 +1049,659 @@ writeFileSync(
   ".taste-skill/qa/tests.json",
   JSON.stringify({ date: new Date().toISOString(), checks }, null, 2),
 );
+function runArcheryChecks() {
+  // Regression: a draw released outside the canvas must fire exactly once,
+  // even when pointer capture fails or is lost during a drag.
+  {
+    const ar = env(),
+      w = ar.w,
+      canvas = w.document.createElement("canvas");
+    w.document.body.append(canvas);
+    canvas.setPointerCapture = () => {
+      throw new Error("capture unavailable");
+    };
+    let releases = 0,
+      cancellations = 0;
+    const dispose = ar.api.archeryInput.bindDrawInput(canvas, {
+      start: () => true,
+      move() {},
+      release() {
+        releases++;
+      },
+      cancel() {
+        cancellations++;
+      },
+    });
+    const pointer = (target, type, buttons = 1, id = 7) => {
+      const event = new w.Event(type, { bubbles: true, cancelable: true });
+      Object.assign(event, {
+        pointerId: id,
+        pointerType: "mouse",
+        button: 0,
+        buttons,
+      });
+      target.dispatchEvent(event);
+    };
+    pointer(canvas, "pointerdown");
+    pointer(canvas, "lostpointercapture", 1);
+    pointer(w, "pointerup", 0);
+    pointer(w, "pointerup", 0);
+    assert.equal(releases, 1, "outside release scores once after capture loss");
+    pointer(canvas, "pointerdown");
+    pointer(canvas, "lostpointercapture", 0);
+    pointer(w, "pointerup", 0);
+    assert.equal(
+      releases,
+      2,
+      "release fallback and normal release cannot double-fire",
+    );
+    pointer(canvas, "pointerdown");
+    pointer(w, "pointercancel", 0);
+    pointer(w, "pointerup", 0);
+    assert.equal(releases, 2);
+    assert.equal(cancellations, 1);
+    pointer(canvas, "pointerdown");
+    dispose();
+    pointer(w, "pointerup", 0);
+    assert.equal(releases, 2, "disposed range cannot fire");
+    ar.close();
+    ok(
+      "Archery aiming release survives capture loss and leaving the canvas, locks once and cancels safely",
+    );
+  }
+  {
+    const ar = env();
+    ar.api.archery.startArchery();
+    const doc = ar.w.document,
+      cv = doc.querySelector("#cv");
+    const event = (type) => {
+      const e = new ar.w.Event(type, { bubbles: true, cancelable: true });
+      Object.assign(e, {
+        pointerId: 4,
+        pointerType: "mouse",
+        button: 0,
+        buttons: type === "pointerdown" ? 1 : 0,
+        clientX: 300,
+        clientY: 300,
+      });
+      return e;
+    };
+    assert(
+      doc.querySelector("#arch-power-dial").hidden,
+      "power dial waits for aim",
+    );
+    assert.equal(
+      doc.querySelectorAll("input[type=range]").length,
+      0,
+      "power is chosen inside the scene, without a slider",
+    );
+    cv.dispatchEvent(event("pointerdown"));
+    ar.w.dispatchEvent(event("pointerup"));
+    ar.frame();
+    assert.equal(
+      doc.querySelector("#arch-shots").getAttribute("aria-label"),
+      "3 shots remaining",
+      "release must not fire",
+    );
+    assert(!doc.querySelector("#arch-power-dial").hidden);
+    assert.match(doc.querySelector("#arch-status").textContent, /Aim locked/);
+    const label = cv.getAttribute("aria-label");
+    const meter = doc.querySelector("#arch-meter-fire");
+    meter.dispatchEvent(
+      new ar.w.KeyboardEvent("keydown", {
+        key: "ArrowRight",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    const selected = doc.querySelector("#arch-power-value").textContent;
+    ar.frame();
+    ar.frame();
+    assert.equal(
+      doc.querySelector("#arch-power-value").textContent,
+      selected,
+      "manual power stays fixed across frames",
+    );
+    assert.equal(
+      cv.getAttribute("aria-label").split(". Draw")[0],
+      label.split(". Draw")[0],
+      "changing strength preserves aim",
+    );
+    doc.querySelector("#arch-meter-fire").click();
+    ar.frame();
+    assert.equal(doc.querySelector("#arch-next").textContent, "Next shot");
+    assert(
+      !/revealed|cm from balance/.test(
+        doc.querySelector("#arch-impact-detail").textContent,
+      ),
+    );
+    assert.match(doc.querySelector("#arch-distance").textContent, /12 m/);
+    cv.dispatchEvent(event("pointerdown"));
+    ar.w.dispatchEvent(event("pointerup"));
+    ar.frame();
+    assert.match(doc.querySelector("#arch-distance").textContent, /18 m/);
+    assert.equal(
+      doc.querySelector("#arch-shots").getAttribute("aria-label"),
+      "2 shots remaining",
+    );
+    const speed2 = Number(
+      doc.querySelector("#arch-sight-wind b").textContent.split(" ")[0],
+    );
+    assert(speed2 >= 5 && speed2 <= 7);
+    doc.querySelector("#arch-meter-fire").click();
+    ar.frame();
+    assert(
+      !/revealed|cm from balance/.test(
+        doc.querySelector("#arch-impact-detail").textContent,
+      ),
+    );
+    doc.querySelector("#arch-next").click();
+    assert.match(doc.querySelector("#arch-distance").textContent, /24 m/);
+    assert(doc.querySelector("#arch-power-dial").hidden);
+    doc.querySelector("#arch-fire").click(); // Lock aim via keyboard-compatible button.
+    doc.querySelector("#arch-meter-fire").click();
+    ar.frame();
+    assert.match(
+      doc.querySelector("#arch-impact-detail").textContent,
+      /balance point revealed/,
+    );
+    assert.equal(doc.querySelector("#arch-next").textContent, "Next target");
+    doc.querySelector("#arch-next").click();
+    assert.match(doc.querySelector("#arch-distance").textContent, /12 m/);
+    doc.querySelector("#arch-home").click();
+    ar.close();
+    ok(
+      "Archery unlocks the in-scene power dial after aiming, supports precise selection without sliders, fires only on confirmation and preserves progression",
+    );
+  }
+  {
+    const ar = env(),
+      { landing, shotConditions } = ar.api.ballistics;
+    for (let i = 0; i < 3; i++) {
+      const conditions = shotConditions(i, () => 0.5);
+      assert.equal(conditions.distance, 12 + i * 6);
+      assert(
+        Math.abs(conditions.wind) >= 2 + i * 3 &&
+          Math.abs(conditions.wind) <= 4 + i * 3,
+      );
+      const p = ar.api.archeryScene.targetPoint(420, 120, {
+        height: 650,
+        zoom: 0,
+        distance: conditions.distance,
+      });
+      const q = ar.api.archeryScene.rangePoint(
+        p.x,
+        p.y,
+        650,
+        conditions.distance,
+      );
+      assert(
+        Math.abs(q.x - 420) < 1e-9 && Math.abs(q.y - 120) < 1e-9,
+        "aim remains accurate at every camera depth",
+      );
+    }
+    const close = landing(300, 170, 0.7, 6, 12),
+      far = landing(300, 170, 0.7, 6, 24),
+      strong = landing(300, 170, 1, 6, 24),
+      reverse = landing(300, 170, 0.7, -6, 24);
+    assert(
+      far.time > close.time && far.x > close.x && far.y > close.y,
+      "distance affects actual flight",
+    );
+    assert(
+      strong.x < far.x && strong.y < far.y,
+      "strength reduces drift and drop",
+    );
+    assert(Math.abs(far.x - 300 + (reverse.x - 300)) < 1e-9);
+    ar.close();
+    ok(
+      "Archery distance changes camera and flight consistently; wind reverses correctly and stronger pins drift less",
+    );
+  }
+  {
+    const ar = env(),
+      sweep = ar.api.archeryPower.sweptPower;
+    assert.equal(sweep(0), 0.35);
+    assert.equal(sweep(2000), 1);
+    assert.equal(sweep(4000), 0.35);
+    assert(Math.abs(sweep(1000) - sweep(3000)) < 1e-9);
+    for (let ms = 0; ms < 16000; ms += 37)
+      assert(sweep(ms) >= 0.35 && sweep(ms) <= 1);
+    // Reduced-motion preferences must present a stationary, manually adjustable dial.
+    ar.api.archery.startArchery();
+    const d = ar.w.document;
+    d.querySelector("#arch-fire").click();
+    const chosen = d.querySelector("#arch-power-value").textContent;
+    ar.frame();
+    ar.frame();
+    assert.equal(d.querySelector("#arch-power-value").textContent, chosen);
+    assert.equal(
+      d.querySelector("#arch-meter-pause").textContent,
+      "Resume meter",
+    );
+    d.querySelector("#arch-meter-pause").click();
+    ar.frame();
+    assert.equal(
+      d.querySelector("#arch-meter-pause").textContent,
+      "Pause meter",
+    );
+    d.querySelector("#arch-meter-pause").click();
+    const frozen = d.querySelector("#arch-power-value").textContent;
+    ar.frame();
+    assert.equal(d.querySelector("#arch-power-value").textContent, frozen);
+    d.querySelector("#arch-home").click();
+    ar.close();
+    ok(
+      "Archery power sweeps predictably without auto-firing, can pause and resume, and starts stationary for reduced motion",
+    );
+  }
+}
+function runDiversityChecks() {
+  const d = env("2026-11-03"),
+    a = d.api;
+  const hashValue = (value) =>
+    createHash("sha256").update(JSON.stringify(value)).digest("hex");
+  const baseline = JSON.parse(
+    readFileSync("tests/fixtures/before-v7.json", "utf8"),
+  );
+  for (const row of baseline) {
+    const recipe = a.store.puzzleOf(row.date),
+      shapes = a.gen.build(recipe.seed, recipe.fams);
+    assert.equal(hashValue(recipe), row.recipe, `Archived recipe ${row.date}`);
+    assert.equal(
+      hashValue(
+        shapes.map((s) => [
+          s.fam,
+          s.name,
+          s.parts,
+          s.rot,
+          s.fl,
+          s.c,
+          s.k2,
+          s.s,
+          s.off,
+        ]),
+      ),
+      row.shapes,
+      `Archived geometry/mass ${row.date}`,
+    );
+    assert.equal(
+      hashValue(a.mode3d.make3DSet(row.date)),
+      row.volumes,
+      `Archived 3D ${row.date}`,
+    );
+    shapes.forEach((s) => {
+      s.sp._canvas.width = 1;
+      s.sp._canvas.height = 1;
+    });
+  }
+  ok(
+    "All 13 published daily recipes, 65 rendered mass calculations and dated 3D sets match the previously built app exactly",
+  );
+  const allArt = createCanvas(1600, 2055),
+    artCtx = allArt.getContext("2d");
+  artCtx.fillStyle = "#eceef2";
+  artCtx.fillRect(0, 0, 1600, 2055);
+  artCtx.fillStyle = "#171a21";
+  artCtx.font = "bold 24px sans-serif";
+  artCtx.fillText("New 2D catalogue · 80 recognizable silhouettes", 24, 34);
+  let artIndex = 0;
+  const masks = new Set(),
+    maskCanvas = createCanvas(96, 96),
+    maskCtx = maskCanvas.getContext("2d");
+  for (const id of a.novel.NOVEL_GROUPS.flat()) {
+    const object = a.novel.NOVEL_OBJECTS[id],
+      shape = a.gen.prep(
+        {
+          fam: id,
+          name: object.name,
+          parts: object.make(
+            () => 0.5,
+            (lo, hi) => (lo + hi) / 2,
+            (i) => ["wood", "steel", "glass"][i % 3],
+          ),
+          a: "#888",
+          rot: 0,
+          fl: false,
+        },
+        9.81,
+        128,
+      ),
+      variants = [];
+    for (let mirror = 0; mirror < 2; mirror++)
+      for (let turn = 0; turn < 4; turn++) {
+        maskCtx.clearRect(0, 0, 96, 96);
+        maskCtx.save();
+        maskCtx.translate(48, 48);
+        maskCtx.rotate((turn * Math.PI) / 2);
+        maskCtx.scale(mirror ? -1 : 1, 1);
+        maskCtx.drawImage(shape.sp._canvas, -48, -48, 96, 96);
+        maskCtx.restore();
+        const rgba = maskCtx.getImageData(0, 0, 96, 96).data,
+          bits = Buffer.alloc(96 * 96);
+        for (let i = 0; i < bits.length; i++)
+          bits[i] = rgba[i * 4 + 3] > 127 ? 255 : 0;
+        variants.push(createHash("sha256").update(bits).digest("hex"));
+      }
+    const artX = (artIndex % 8) * 200,
+      artY = 55 + Math.floor(artIndex / 8) * 200;
+    artCtx.drawImage(shape.sp._canvas, artX + 20, artY, 160, 160);
+    artCtx.fillStyle = "#171a21";
+    artCtx.font = "bold 13px sans-serif";
+    artCtx.textAlign = "center";
+    artCtx.fillText(object.name, artX + 100, artY + 182);
+    artIndex++;
+    const key = variants.sort()[0];
+    assert(
+      !masks.has(key),
+      `Repainted or rotated duplicate 2D silhouette: ${id}`,
+    );
+    masks.add(key);
+    shape.sp._canvas.width = 1;
+    shape.sp._canvas.height = 1;
+  }
+  mkdirSync(".taste-skill/qa", { recursive: true });
+  writeFileSync(
+    ".taste-skill/qa/novel-2d-catalogue.png",
+    allArt.toBuffer("image/png"),
+  );
+  const geometryKeys = new Set(),
+    permutations = [
+      [0, 1, 2],
+      [0, 2, 1],
+      [1, 0, 2],
+      [1, 2, 0],
+      [2, 0, 1],
+      [2, 1, 0],
+    ];
+  for (const object of a.volumes.VOLUME_OBJECTS) {
+    const points = object.make(() => 0.5),
+      variants = [];
+    const occupiedBase = new Set(points.map((p) => p.join(","))),
+      visitedBase = new Set(),
+      todoBase = [points[0]];
+    for (let index = 0; index < todoBase.length; index++) {
+      const p = todoBase[index],
+        key = p.join(",");
+      if (visitedBase.has(key)) continue;
+      visitedBase.add(key);
+      for (let axis = 0; axis < 3; axis++)
+        for (const sign of [-1, 1]) {
+          const q = [...p];
+          q[axis] += sign;
+          const k = q.join(",");
+          if (occupiedBase.has(k) && !visitedBase.has(k)) todoBase.push(q);
+        }
+    }
+    assert.equal(
+      visitedBase.size,
+      occupiedBase.size,
+      `${object.name} base recipe must be face-connected before variants`,
+    );
+    for (const permutation of permutations)
+      for (let signs = 0; signs < 8; signs++) {
+        const rotated = points.map((p) =>
+            permutation.map((axis, i) => p[axis] * ((signs >> i) & 1 ? -1 : 1)),
+          ),
+          lo = [0, 1, 2].map((axis) =>
+            Math.min(...rotated.map((p) => p[axis])),
+          );
+        variants.push(
+          [...new Set(rotated.map((p) => p.map((v, i) => v - lo[i]).join(",")))]
+            .sort()
+            .join(";"),
+        );
+      }
+    const key = variants.sort()[0];
+    assert(
+      !geometryKeys.has(key),
+      `Repainted or reoriented duplicate 3D volume: ${object.id}`,
+    );
+    geometryKeys.add(key);
+  }
+  ok(
+    "All 80 authored 2D silhouettes and 48 base 3D geometries are distinct independently of materials, translation, quarter-turn rotations and reflections",
+  );
+  const families = [],
+    volumes = [],
+    volumeExamples = [];
+  const contact = createCanvas(1700, 7 * 220 + 60),
+    cx = contact.getContext("2d");
+  cx.fillStyle = "#eceef2";
+  cx.fillRect(0, 0, contact.width, contact.height);
+  cx.fillStyle = "#171a21";
+  cx.font = "bold 24px sans-serif";
+  cx.fillText("Next seven daily collections · new silhouettes", 24, 36);
+  for (let day = 0; day < 64; day++) {
+    const date = new Date(Date.UTC(2026, 10, 3 + day))
+        .toISOString()
+        .slice(0, 10),
+      recipe = a.store.puzzleOf(date);
+    assert(recipe.seed.startsWith("p7|"));
+    const raw = recipe.fams.map((id, i) =>
+      a.gen.mk(recipe.seed, i, id, recipe.tw),
+    );
+    assert.equal(new Set(raw.map((s) => s.fam)).size, 5);
+    assert.equal(
+      JSON.stringify(raw),
+      JSON.stringify(
+        recipe.fams.map((id, i) => a.gen.mk(recipe.seed, i, id, recipe.tw)),
+      ),
+    );
+    families.push(raw.map((s) => s.fam));
+    if (day < 16) {
+      const shapes = a.gen.build(recipe.seed, recipe.fams);
+      for (const [slot, shape] of shapes.entries()) {
+        assert(
+          shape.c.every(Number.isFinite) && shape.k2 > 0 && shape.s > 0,
+          `${date} ${shape.name} physical mass`,
+        );
+        const mats = [
+          ...new Set(
+            shape.parts
+              .filter((p) => p[0] !== "X")
+              .map((p) => String(p[0]).replace(/\+$/, "")),
+          ),
+        ];
+        const ratio =
+          Math.max(...mats.map((m) => a.gen.MAT[m][1])) /
+          Math.min(...mats.map((m) => a.gen.MAT[m][1]));
+        if (slot === 0) assert(ratio >= 10);
+        if (slot >= 3) assert(ratio <= 2.5);
+        if (day < 7) {
+          const x = 160 + slot * 300,
+            y = 60 + day * 220;
+          cx.drawImage(shape.sp._canvas, x + 45, y, 190, 190);
+          cx.fillStyle = "#171a21";
+          cx.font = "bold 16px sans-serif";
+          cx.fillText(shape.name, x + 24, y + 208);
+        }
+        shape.sp._canvas.width = 1;
+        shape.sp._canvas.height = 1;
+      }
+      if (day < 7) {
+        cx.fillStyle = "#5f6674";
+        cx.font = "bold 16px sans-serif";
+        cx.fillText(date, 20, 60 + day * 220 + 100);
+      }
+    }
+    const set = a.mode3d.make3DSet(date);
+    if (day < 16) volumeExamples.push(...set.map((shape) => ({ date, shape })));
+    assert.equal(hashValue(set), hashValue(a.mode3d.make3DSet(date)));
+    assert.equal(new Set(set.map((s) => s.id)).size, 3);
+    volumes.push(set.map((s) => s.id));
+    for (const shape of set) {
+      assert(shape.center.every(Number.isFinite));
+      assert(new Set(shape.voxels.map((v) => v.mat)).size >= 2);
+      const occupied = new Set(shape.voxels.map((v) => v.p.join(","))),
+        seen = new Set(),
+        queue = [shape.voxels[0].p];
+      assert.equal(occupied.size, shape.voxels.length);
+      for (let i = 0; i < queue.length; i++) {
+        const p = queue[i],
+          key = p.join(",");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        for (let axis = 0; axis < 3; axis++)
+          for (const direction of [-1, 1]) {
+            const q = [...p];
+            q[axis] += direction;
+            const k = q.join(",");
+            if (occupied.has(k) && !seen.has(k)) queue.push(q);
+          }
+      }
+      assert.equal(
+        seen.size,
+        occupied.size,
+        `${date} ${shape.name} must be one physically connected volume`,
+      );
+      for (let axis = 0; axis < 3; axis++)
+        assert(
+          new Set(shape.voxels.map((v) => v.p[axis])).size >= 2,
+          `${shape.name} has genuine depth`,
+        );
+    }
+    if (day % 8 === 0) global.gc?.();
+  }
+  for (let day = 0; day <= 48; day++) {
+    assert.equal(
+      new Set(families.slice(day, day + 16).flat()).size,
+      80,
+      `2D family repeated inside sixteen days at ${day}`,
+    );
+    assert.equal(
+      new Set(volumes.slice(day, day + 16).flat()).size,
+      48,
+      `3D family repeated inside sixteen days at ${day}`,
+    );
+  }
+  assert.equal(new Set(a.novel.NOVEL_GROUPS.flat()).size, 80);
+  assert.equal(a.volumes.VOLUME_OBJECTS.length, 48);
+  mkdirSync(".taste-skill/qa", { recursive: true });
+  writeFileSync(
+    ".taste-skill/qa/novel-week.png",
+    contact.toBuffer("image/png"),
+  );
+  const preview = createCanvas(1700, 720);
+  preview.getContext("2d").drawImage(contact, 0, 0);
+  writeFileSync(
+    ".taste-skill/qa/novel-preview.png",
+    preview.toBuffer("image/png"),
+  );
+  const gallery = createCanvas(1800, 8 * 240 + 55),
+    g = gallery.getContext("2d");
+  g.fillStyle = "#eceef2";
+  g.fillRect(0, 0, gallery.width, gallery.height);
+  g.fillStyle = "#171a21";
+  g.font = "bold 24px sans-serif";
+  g.fillText("New 3D catalogue · 48 volumetric forms", 24, 34);
+  const faces = [
+    {
+      normal: [1, 0, 0],
+      v: [
+        [0.5, -0.5, -0.5],
+        [0.5, 0.5, -0.5],
+        [0.5, 0.5, 0.5],
+        [0.5, -0.5, 0.5],
+      ],
+      shade: 0.78,
+    },
+    {
+      normal: [0, -1, 0],
+      v: [
+        [-0.5, -0.5, -0.5],
+        [0.5, -0.5, -0.5],
+        [0.5, -0.5, 0.5],
+        [-0.5, -0.5, 0.5],
+      ],
+      shade: 1.05,
+    },
+    {
+      normal: [0, 0, 1],
+      v: [
+        [-0.5, -0.5, 0.5],
+        [0.5, -0.5, 0.5],
+        [0.5, 0.5, 0.5],
+        [-0.5, 0.5, 0.5],
+      ],
+      shade: 0.9,
+    },
+  ];
+  const project = (p) => [
+    (p[0] - p[2]) * 0.866,
+    (p[0] + p[2]) * 0.36 + p[1] * 0.85,
+  ];
+  volumeExamples.forEach(({ date, shape }, index) => {
+    const occupied = new Set(shape.voxels.map((v) => v.p.join(","))),
+      tiles = [];
+    for (const voxel of shape.voxels)
+      for (const face of faces) {
+        if (occupied.has(voxel.p.map((v, i) => v + face.normal[i]).join(",")))
+          continue;
+        const corners = face.v.map((v) =>
+          v.map((value, i) => value + voxel.p[i]),
+        );
+        tiles.push({
+          corners: corners.map(project),
+          depth:
+            corners.reduce((sum, p) => sum + p[0] + p[2] - p[1] * 0.5, 0) / 4,
+          mat: voxel.mat,
+          shade: face.shade,
+        });
+      }
+    const points = tiles.flatMap((t) => t.corners),
+      lo = [
+        Math.min(...points.map((p) => p[0])),
+        Math.min(...points.map((p) => p[1])),
+      ],
+      hi = [
+        Math.max(...points.map((p) => p[0])),
+        Math.max(...points.map((p) => p[1])),
+      ];
+    const scale = Math.min(220 / (hi[0] - lo[0]), 180 / (hi[1] - lo[1])),
+      x = (index % 6) * 300 + 150,
+      y = 55 + Math.floor(index / 6) * 240 + 95;
+    for (const tile of tiles.sort((a, b) => a.depth - b.depth)) {
+      g.beginPath();
+      tile.corners.forEach((p, i) => {
+        const X = x + (p[0] - (lo[0] + hi[0]) / 2) * scale,
+          Y = y + (p[1] - (lo[1] + hi[1]) / 2) * scale;
+        i ? g.lineTo(X, Y) : g.moveTo(X, Y);
+      });
+      g.closePath();
+      const hex = a.gen.MAT[tile.mat][0].slice(1),
+        rgb = [0, 2, 4].map((i) =>
+          Math.min(
+            255,
+            Math.round(parseInt(hex.slice(i, i + 2), 16) * tile.shade),
+          ),
+        );
+      g.fillStyle = `rgb(${rgb.join(",")})`;
+      g.fill();
+      g.strokeStyle = "#ffffff55";
+      g.lineWidth = 0.5;
+      g.stroke();
+    }
+    g.fillStyle = "#171a21";
+    g.font = "bold 16px sans-serif";
+    g.textAlign = "center";
+    g.fillText(shape.name, x, y + 112);
+    g.fillStyle = "#5f6674";
+    g.font = "12px sans-serif";
+    g.fillText(date, x, y + 132);
+  });
+  writeFileSync(
+    ".taste-skill/qa/novel-3d-catalogue.png",
+    gallery.toBuffer("image/png"),
+  );
+  d.close();
+  ok(
+    "80 recognizable 2D families and 48 volumetric 3D families do not recur within any sixteen-day window across 64 daily sets",
+  );
+  ok(
+    "New silhouettes retain density progression; all 192 tested 3D objects are connected, deterministic and genuinely volumetric",
+  );
+}
+runArcheryChecks();
+runDiversityChecks();
 console.log(`\n${checks.length} checks passed.`);

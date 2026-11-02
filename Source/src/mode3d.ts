@@ -1,4 +1,5 @@
 import { MAT, hash, rng } from "./gen";
+import { volumeSet } from "./catalog3d-v2";
 import { app, $, cl, css, GRADES, gi, RM, setTitle, say } from "./dom";
 import { TODAY, NO, fmtDate, untilNext } from "./store";
 import { stop } from "./stage";
@@ -350,6 +351,7 @@ function normalizePoints(points: V3[]) {
 }
 
 export function make3DSet(date = TODAY): Shape3D[] {
+  if (date >= "2026-11-03") return make3DSetV2(date);
   const r = rng(hash("3d:" + date)),
     order = [...patterns];
   for (let i = order.length - 1; i > 0; i--) {
@@ -381,6 +383,55 @@ export function make3DSet(date = TODAY): Shape3D[] {
       voxels,
       center: center3D(voxels),
       extent,
+    };
+  });
+}
+
+function make3DSetV2(date: string): Shape3D[] {
+  const random = rng(hash("3d-v2:" + date));
+  const day = Math.round(
+    (Date.parse(date + "T00:00:00Z") - Date.UTC(2026, 10, 3)) / 864e5,
+  );
+  const palettes = [
+    [
+      ["wood", "steel"],
+      ["cork", "brass"],
+      ["plastic", "gold"],
+      ["glass", "brass"],
+    ],
+    [
+      ["wood", "glass", "aluminum"],
+      ["plastic", "ceramic", "steel"],
+      ["rubber", "glass", "brass"],
+    ],
+    [
+      ["ceramic", "glass", "aluminum"],
+      ["wood", "rubber", "plastic"],
+      ["steel", "brass", "gold"],
+    ],
+  ];
+  return volumeSet(day, random).map((recipe, round) => {
+    const points = normalizePoints(recipe.points),
+      pool = palettes[round][Math.floor(random() * palettes[round].length)];
+    const axis = Math.floor(random() * 3),
+      secondary = (axis + 1) % 3;
+    const lo = Math.min(...points.map((p) => p[axis])),
+      hi = Math.max(...points.map((p) => p[axis]));
+    const cut = lo + (hi - lo) * (0.35 + random() * 0.3);
+    const voxels = points.map((p) => ({
+      p,
+      mat: pool[
+        p[axis] > cut ? 1 : pool.length === 3 && p[secondary] > 0 ? 2 : 0
+      ],
+    }));
+    return {
+      id: recipe.id,
+      name: recipe.name,
+      voxels,
+      center: center3D(voxels),
+      extent: Math.max(
+        ...points.flatMap((p) => p.map((v) => Math.abs(v) + 0.5)),
+      ),
     };
   });
 }
@@ -482,7 +533,10 @@ function playRound(set: Shape3D[], results: Result3D[]) {
   let W = 1,
     H = 1,
     scale = 40,
-    q: Q = qmul(qaxis([1, 0, 0], -0.42), qaxis([0, 1, 0], 0.62)),
+    q: Q = qmul(
+      qaxis([1, 0, 0], -0.42),
+      qaxis([0, 1, 0], shape.id.startsWith("v2-") ? -0.62 : 0.62),
+    ),
     pinLocal: V3 | null = null,
     pinNormal: V3 | null = null,
     pinScreen: [number, number] | null = null,
@@ -521,7 +575,14 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     canvas.style.width = W + "px";
     canvas.style.height = H + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    scale = Math.min(W, H) / (shape.extent * 2.0);
+    const radius = shape.id.startsWith("v2-")
+      ? Math.max(
+          ...shape.voxels.map((v) => Math.hypot(...v.p) + Math.sqrt(3) / 2),
+        )
+      : 0;
+    scale = radius
+      ? Math.min(W * 0.9, H * 0.82) / (radius * 2)
+      : Math.min(W, H) / (shape.extent * 2);
     if (!cursor[0]) cursor = [W / 2, H / 2];
     invalidate();
   };

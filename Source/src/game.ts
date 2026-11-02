@@ -56,7 +56,8 @@ import { end } from "./end";
 import { navBtns, bindNav } from "./sheets";
 import { syncAccount } from "./auth";
 
-export type Phase = "home" | "aim" | "swing" | "result" | "end" | "mode3d";
+export type Phase =
+  "home" | "aim" | "swing" | "result" | "end" | "mode3d" | "archery";
 export const ui = { ph: "home" as Phase };
 
 interface Result {

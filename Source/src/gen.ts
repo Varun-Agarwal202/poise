@@ -1,4 +1,5 @@
 import { OBJECTS, COLLECTIONS } from "./catalog";
+import { NOVEL_OBJECTS, novelFamilies, NOVEL_START } from "./catalog-v7";
 import { formIndex, formParts, formPartsV5, formName } from "./unique";
 // Deterministic shape generator. Any change here changes every past and future daily puzzle.
 
@@ -827,7 +828,12 @@ export const famsFor2 = (n: number) => {
 /** v2 seeds look like `p2|<base>|<twist id>`, so a saved result can always be rebuilt exactly. */
 export const twistOf = (seed: string) => {
   const [v, , t] = seed.split("|");
-  return v === "p2" || v === "p3" || v === "p4" || v === "p5" || v === "p6"
+  return v === "p2" ||
+    v === "p3" ||
+    v === "p4" ||
+    v === "p5" ||
+    v === "p6" ||
+    v === "p7"
     ? (TW[t] ?? TW.classic)
     : null;
 };
@@ -940,16 +946,21 @@ export function mk(
       name: formName(index),
     };
   }
-  if (seed.startsWith("p6|")) {
+  if (seed.startsWith("p6|") || seed.startsWith("p7|")) {
     const index = formIndex(fam);
     if (index < 0) throw new Error("Unknown daily silhouette");
     const day = Math.floor(index / 5),
       slot = index % 5,
-      family = famsFor3(day)[slot],
+      family = seed.startsWith("p7|")
+        ? novelFamilies(day + 3 - NOVEL_START)[slot]
+        : famsFor3(day)[slot],
       materials = materialsV5(index, slot),
       material = (j: number) => materials[j % materials.length];
     v2 = true;
-    const parts = FAM[family](r, rr, material, c, slot, seed).map((part) => {
+    const art = seed.startsWith("p7|")
+      ? NOVEL_OBJECTS[family].make(r, rr, material)
+      : FAM[family](r, rr, material, c, slot, seed);
+    const parts = art.map((part) => {
       const name = String(part[0]).replace(/\+$/, "");
       if (name !== "wood" || materials.includes("wood")) return part;
       return [
@@ -991,8 +1002,9 @@ export function mk(
       rot: ((Math.floor(r() * 3) - 1) * Math.PI) / 12,
       fl: r() < 0.5,
       parts,
-      name:
-        family === "sprite"
+      name: seed.startsWith("p7|")
+        ? NOVEL_OBJECTS[family].name
+        : family === "sprite"
           ? spriteName
           : (OBJECTS[family]?.name ??
             names[hash(seed + family) % names.length]),
@@ -1187,7 +1199,7 @@ export function prep(raw: Raw, gv = G0, massSize = 384): Shape {
 }
 export const build = (seed: string, fams: string[]) => {
   const T = twistOf(seed);
-  const massSize = seed.startsWith("p6|") ? 384 : 160;
+  const massSize = seed.startsWith("p6|") || seed.startsWith("p7|") ? 384 : 160;
   return fams.map((f, i) => prep(mk(seed, i, f, T), T?.g, massSize));
 };
 export const famsFor = (seed: string) => {

@@ -1,0 +1,80 @@
+[
+  {
+    "date": "2026-10-21",
+    "recipe": "ef37bf683a49afca378f62a7b21326cfc748326426d3a666007ce6ce0c6718aa",
+    "shapes": "0dcfc943e57588ff5f5a71e8252f641b43902bfddbd891f28dba6a2aa41391eb",
+    "volumes": "fd1468a68cbf070858f5e275e11bcbf664bf2f12cddcf3f4749671e28ee9e366"
+  },
+  {
+    "date": "2026-10-22",
+    "recipe": "c0684787cd0a7c7689eb33fece0dfa251228ebcfa2d22a73f70e308b796a4e0d",
+    "shapes": "ca4f879fbc3a83c2a78bed68ad284921bd1697e2e320e777fe4a2b9ec05f630b",
+    "volumes": "8ffea7551a5906da8b5bb2f6cf27997752f794282dae473dabe30b4dcb364a60"
+  },
+  {
+    "date": "2026-10-23",
+    "recipe": "e79cc09a25b97d7af17707b703d556609442bfc0465a516400d86590ed8318a4",
+    "shapes": "b8887ed9dc141753480ebfd22bc0579224ca8d394e1da7d07d4a6ea65d475789",
+    "volumes": "c7caffd6b7623e6f65dffcffbe59ee7c5f850da6682bef03e0de1b33f8c23d28"
+  },
+  {
+    "date": "2026-10-24",
+    "recipe": "dc985709dea2b3f19b9bbafcdd7feb2c3e428d2d88240584dac1b3a519914e3a",
+    "shapes": "244f1db04c19c77c213c87007ee1bd948394b5d3bfbfdc05b93944c044069942",
+    "volumes": "a0f6198def8aecfaefcb0251e6d74f5acbf1d3b23ab9fc93c655dc9a1b8e87b6"
+  },
+  {
+    "date": "2026-10-25",
+    "recipe": "0f3482550f5462b6c6d3f0b4071205e993b38b6acbcd3aac56177076b9e219b2",
+    "shapes": "17deb98923fad5863eb538e4a8414b08b2c1096ce9cc675d0cf7495e043fdf70",
+    "volumes": "2fdb9de52ccdd2097bc752c4c06ded36f2a739e91c9410646b76de828d55ea66"
+  },
+  {
+    "date": "2026-10-26",
+    "recipe": "7df07ecead3108b112414226195e7ab124e993c311ef3346cad889dee0ceba91",
+    "shapes": "f61180898e2922bb1ab4a6c42179d192eea61874cd7741f7bdb3467c4fbb5d2e",
+    "volumes": "cca90362dc4a942c615b1794c1d451857a190ac915b2fd13ee7ee6ce884e83f9"
+  },
+  {
+    "date": "2026-10-27",
+    "recipe": "7c387233ca83bfd1a6ee3e8814d4662150587bf606ac13b5a9c1f4cb5aefca91",
+    "shapes": "fb77c29d176237f5a887413c5e419915f17179c594019df719aeb529b64cfe89",
+    "volumes": "5b4da0bdd739e6ab988a5863dade3fc91457f4aa594012b3a52663dc1d7ff396"
+  },
+  {
+    "date": "2026-10-28",
+    "recipe": "f101f3d7505e902fd5ccc8b5a1e24c1646b94a866bebe80ab2b0a2494db0a7f4",
+    "shapes": "f8eb7f1f16a99fd5aa34d644a1ae35c4647768408f9d90a69520240844b0f821",
+    "volumes": "211680f0bfb6a8bafe761de254026e853d28867ce35a7967e6918788e1bf32cc"
+  },
+  {
+    "date": "2026-10-29",
+    "recipe": "a33ddc5d0cb0395b2dfad0c25caac99dc2a749c36c5ef20a4e85a864d2e446aa",
+    "shapes": "e748d62cdf7166897e92e95c123f159bf8fc7dc205ea645a1ec6564f75ab62b8",
+    "volumes": "4f8a69e89339e1edb260c8c575afb52fc79602e951af0b1a3093a738ebf23c3c"
+  },
+  {
+    "date": "2026-10-30",
+    "recipe": "d8dab853b6d3d0584da4122c8cffa47decf4d81d5114a66814df8956ae0d0a25",
+    "shapes": "1ff3b53f36fa87679738da6405e91ed23d2b362be229774fb256ea0336df0ce7",
+    "volumes": "9eb16e17a3755fec990d2f6a3555697c9d029eaf95a2ce695aa7f75001f0dd2d"
+  },
+  {
+    "date": "2026-10-31",
+    "recipe": "34c1bb17994d2c2091d9d57cf8d0f24ad05388383bf40f846d419b23b264d0aa",
+    "shapes": "95e2d1580579e8ee9882c9f9186863bb502617641fef8f2d5b1e645c993b3394",
+    "volumes": "10774349642f724e3a51597f71fd03f57248f9181216fe495e37265662f69bb5"
+  },
+  {
+    "date": "2026-11-01",
+    "recipe": "99b859e9561d5fa11ce55f8316ab470cb1dd3fed7627671b4eabc7b26e28d3ec",
+    "shapes": "b4f230afb27bd093befdf9a878645ec166edb47520c90b6ce8ebf3d1bdf3b8d7",
+    "volumes": "9b16505c6705336c3f29f6da2252ffd6aca8b8805f72b99972e8edaaa0746841"
+  },
+  {
+    "date": "2026-11-02",
+    "recipe": "7845950baea71b5e272495e11e5ef6ee0850aa8b287bb3a42806cf0bfa802c39",
+    "shapes": "4d14cd0c0218993f7960a169cc2b189c745c89e2fcade672d8379d62374ec45a",
+    "volumes": "dfc1889ecec13fe467fee8b84a602fbdbfc707f4e9794dde66f756cf30a6689f"
+  }
+]

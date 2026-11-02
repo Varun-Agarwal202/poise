@@ -57,7 +57,7 @@ export function watch(el: HTMLElement, fn: () => void) {
   addEventListener("resize", fn);
 }
 
-export function mount(draw: Draw) {
+export function mount(draw: Draw, local = false) {
   const cv = $<HTMLCanvasElement>("#cv"),
     st = $("#stage");
   view.cv = cv;
@@ -65,9 +65,9 @@ export function mount(draw: Draw) {
   view.ink = css("--ink") || view.ink;
   view.bg = css("--bg") || view.bg;
   watch(st, () => {
-    const W = innerWidth,
-      H = innerHeight,
-      r = st.getBoundingClientRect(),
+    const r = st.getBoundingClientRect(),
+      W = local ? r.width : innerWidth,
+      H = local ? r.height : innerHeight,
       k = Math.max(1, Math.min(dpr, Math.sqrt(PIXELS / (W * H))));
     if (cv.width !== Math.round(W * k) || cv.height !== Math.round(H * k)) {
       view.W = W;
@@ -78,13 +78,23 @@ export function mount(draw: Draw) {
       cv.width = Math.round(W * k);
       cv.height = Math.round(H * k);
     }
-    view.f = { x: r.left, y: r.top, w: r.width, h: r.height };
+    view.f = {
+      x: local ? 0 : r.left,
+      y: local ? 0 : r.top,
+      w: r.width,
+      h: r.height,
+    };
     view.hold = false;
   });
   const sc = $("#app");
   const scroll = () => {
     const r = st.getBoundingClientRect();
-    view.f = { x: r.left, y: r.top, w: r.width, h: r.height };
+    view.f = {
+      x: local ? 0 : r.left,
+      y: local ? 0 : r.top,
+      w: r.width,
+      h: r.height,
+    };
     view.hold = false;
   };
   const theme = () => {

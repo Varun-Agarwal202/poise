@@ -146,6 +146,7 @@ export function home() {
   ${recoveredSave ? '<p class="small mute">An invalid score was set aside. Valid results are safe.</p>' : ""}
   <button class="btn" id="go">${label}</button>
   <button class="mode3d-link" id="go3" type="button" aria-label="Play Pinpoise 3D, three objects"><span class="mode3d-mark" aria-hidden="true"><svg viewBox="0 0 44 44" fill="none"><path d="m22 5 13 7.5v15L22 35 9 27.5v-15L22 5Z"/><path d="m9 12.5 13 7.5 13-7.5M22 20v15"/><circle cx="22" cy="10" r="3"/><path d="M22 13v8"/></svg></span><span class="mode3d-copy"><b>Pinpoise 3D</b><small>Rotate. Pin. Drop.</small></span><span class="mode3d-cta">3 objects <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg></span></button>
+  <button class="mode3d-link" id="go-archery" type="button"><span class="mode3d-mark" aria-hidden="true"><svg viewBox="0 0 44 44" fill="none"><path d="M11 7q25 15 0 30l10-15L11 7ZM21 22h17m-6-6 6 6-6 6"/></svg></span><span class="mode3d-copy"><b>Poise Archery</b><small>Read the wind. Release the pin.</small></span><span class="mode3d-cta">Play</span></button>
   <p class="small mute" data-next>Next puzzle in ${untilNext()}</p></div>`;
   app.scrollTop = 0;
   const mc = css("--mute");
@@ -155,5 +156,7 @@ export function home() {
   mount(homeDemo);
   bindNav();
   $("#go").onclick = () => (d ? end(d, false) : start("daily"));
+  $("#go-archery").onclick = async () =>
+    (await import("./archery")).startArchery();
   $("#go3").onclick = async () => (await import("./mode3d")).start3D();
 }

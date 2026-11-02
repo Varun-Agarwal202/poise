@@ -351,7 +351,7 @@ function normalizePoints(points: V3[]) {
 }
 
 export function make3DSet(date = TODAY): Shape3D[] {
-  if (date >= "2026-11-03") return make3DSetV2(date);
+  if (date >= "2026-11-02") return make3DSetV2(date);
   const r = rng(hash("3d:" + date)),
     order = [...patterns];
   for (let i = order.length - 1; i > 0; i--) {
@@ -390,7 +390,7 @@ export function make3DSet(date = TODAY): Shape3D[] {
 function make3DSetV2(date: string): Shape3D[] {
   const random = rng(hash("3d-v2:" + date));
   const day = Math.round(
-    (Date.parse(date + "T00:00:00Z") - Date.UTC(2026, 10, 3)) / 864e5,
+    (Date.parse(date + "T00:00:00Z") - Date.UTC(2026, 10, 2)) / 864e5,
   );
   const palettes = [
     [

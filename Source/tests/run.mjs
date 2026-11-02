@@ -1297,14 +1297,15 @@ function runArcheryChecks() {
   }
 }
 function runDiversityChecks() {
-  const d = env("2026-11-03"),
+  const d = env("2026-11-02"),
     a = d.api;
   const hashValue = (value) =>
     createHash("sha256").update(JSON.stringify(value)).digest("hex");
   const baseline = JSON.parse(
     readFileSync("tests/fixtures/before-v7.json", "utf8"),
   );
-  for (const row of baseline) {
+  const frozen = baseline.filter((row) => row.date < "2026-11-02");
+  for (const row of frozen) {
     const recipe = a.store.puzzleOf(row.date),
       shapes = a.gen.build(recipe.seed, recipe.fams);
     assert.equal(hashValue(recipe), row.recipe, `Archived recipe ${row.date}`);
@@ -1336,7 +1337,7 @@ function runDiversityChecks() {
     });
   }
   ok(
-    "All 13 published daily recipes, 65 rendered mass calculations and dated 3D sets match the previously built app exactly",
+    "All 12 pre-edition daily recipes, 60 rendered mass calculations and dated 3D sets match the previously built app exactly",
   );
   const allArt = createCanvas(1600, 2055),
     artCtx = allArt.getContext("2d");

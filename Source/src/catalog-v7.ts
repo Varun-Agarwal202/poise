@@ -1,7 +1,7 @@
 import type { Part } from "./gen";
 
 /** A new dated edition. Existing recipes and archives never read this catalogue. */
-export const NOVEL_START = 13; // November 3, 2026.
+export const NOVEL_START = 12; // November 2, 2026.
 type Ink = 0 | 1 | 2 | "X";
 const P = (m: Ink, ...xy: number[]): Part => [
   String(m),

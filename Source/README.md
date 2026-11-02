@@ -19,14 +19,14 @@ The home, 2D, 3D, Archery, and results screens must remain usable without horizo
 
 Before release, inspect representative phone portrait (320–430px), phone landscape (760–930px wide and no more than 620px tall), tablet portrait and landscape (768–1366px), and desktop (1280px and wider) viewports. Check each game mode at default and enlarged browser text, including home navigation, canvas interaction, controls, result screens, and rotation or split-screen transitions.
 
-### Daily shape editions — November 3, 2026 rollout
+### Daily shape editions — November 2, 2026 rollout
 
 Generator versions are date-bound in `src/store.ts` and `src/gen.ts`. Preserve released recipes:
 
 - October 21–22, 2026: original v1 recipes; October 23: `p2`.
 - October 24–26: `p4`, using contours from the frozen 6,000-form `src/forms-v4.ts` catalogue through `src/unique.ts`.
-- October 27–November 2: `p6`, using the earlier recognizable object families and the `materialsV5` density progression. `p5` remains a supported generator branch, but is not the dated daily version selected by the store.
-- From November 3: `p7`, using 80 new authored families from `src/catalog-v7.ts`. Animals, dinosaurs, mythical creatures, space objects and vehicles fill the first four rotating categories; 16 multi-subject story silhouettes replace the fifth category. The first November 3 set therefore ends with Sky whale and airship: Camel, Orca, Dragon, Racecar, and Sky whale and airship.
+- October 27–November 1: `p6`, using the earlier recognizable object families and the `materialsV5` density progression. `p5` remains a supported generator branch, but is not the dated daily version selected by the store.
+- From November 2: `p7`, using 80 new authored families from `src/catalog-v7.ts`. Animals, dinosaurs, mythical creatures, space objects and vehicles fill the first four rotating categories; 16 multi-subject story silhouettes replace the fifth category. The first November 2 set therefore ends with Sky whale and airship: Camel, Orca, Dragon, Racecar, and Sky whale and airship.
 
 The new 2D edition schedules five families per day without a family repeat inside any rolling 16-day window. Seeded width and height proportions produce geometry variants as well as material changes. Families return beyond that window; there is no lifetime-unique archetype guarantee. Material densities, the wide-to-medium-to-close density difficulty progression, scoring, and one scored attempt per shape remain unchanged.
 
@@ -38,13 +38,13 @@ Poise Archery shares the dated normal collection rather than maintaining a separ
 
 ### Pinpoise 3D volume edition
 
-From November 3, 2026, `src/mode3d.ts` uses the 48 authored families in `src/catalog3d-v2.ts`. A curated 16-day rotation presents three per day, with no family repeat within any rolling 16-day window. The first set is Elephant, Rocket, and Castle. Families recur after the rotation; seeded variants change actual thickness, and spatial material zones give different regions different densities. These are face-connected volumes with depth along all three axes, rather than recolored flat shapes. Material densities, difficulty progression, scoring, and one scored attempt per object remain unchanged. All dated 3D sets before November 3 keep the previous generator.
+From November 2, 2026, `src/mode3d.ts` uses the 48 authored families in `src/catalog3d-v2.ts`. A curated 16-day rotation presents three per day, with no family repeat within any rolling 16-day window. The first set is Elephant, Rocket, and Castle. Families recur after the rotation; seeded variants change actual thickness, and spatial material zones give different regions different densities. These are face-connected volumes with depth along all three axes, rather than recolored flat shapes. Material densities, difficulty progression, scoring, and one scored attempt per object remain unchanged. All dated 3D sets before November 2 keep the previous generator.
 
 ### Rollout validation
 
 Run `POISE_TEST_SCOPE=diversity npm test` for the four diversity checks in `tests/run.mjs`. They cover:
 
-- The first 13 published dates, October 21–November 2: all dated recipes, 65 shapes' geometry and rendered mass calculations, and complete dated 3D sets match `tests/fixtures/before-v7.json`, captured independently from the previously built app. Do not regenerate this baseline from the new implementation.
+- The first 12 pre-edition dates, October 21–November 1: all dated recipes, 60 shapes' geometry and rendered mass calculations, and complete dated 3D sets match `tests/fixtures/before-v7.json`, captured independently from the previously built app. Do not regenerate this baseline from the new implementation.
 - Independent material-free mask uniqueness for all 80 authored 2D silhouettes under quarter-turn rotations and reflection, plus normalized geometry uniqueness and base voxel connectivity for all 48 3D families under axis permutations, reflection, and translation.
 - Deterministic generation and rolling 16-day family separation across 64 new daily sets.
 - Preserved 2D density progression, finite mass properties, and face connectivity, distinct voxels, multiple materials, and genuine three-axis volume for all 192 tested 3D objects.

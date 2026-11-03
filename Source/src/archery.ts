@@ -1,6 +1,6 @@
 import { mk, prep, hash, rng, MAT, type Shape } from "./gen";
 import { app, $, cl, css, RM, setTitle, say } from "./dom";
-import { mount, stop, view, watch } from "./stage";
+import { mount, shapeImage, stop, view, watch } from "./stage";
 import { ui, live } from "./game";
 import { puzzleOf, TODAY } from "./store";
 import { home } from "./home";
@@ -99,7 +99,7 @@ export function startArchery() {
   function update() {
     cv.setAttribute(
       "aria-label",
-      `First-person archery range. Target: ${shapes[round].name}. Materials: ${[...new Set(shapes[round].parts.map((p) => String(p[0])).filter((m) => m in MAT))].map((m) => `${m}, density ${MAT[m][1]}`).join("; ")}. ${aimWords()} ${aimLocked ? (powerPaused ? "Aim locked. Meter paused. Arrow keys adjust power; Space shoots." : "Aim locked. Watch the moving power dial; tap or press Space to shoot. Arrow keys pause and adjust power.") : "Arrow keys aim; Enter locks aim."}`,
+      `First-person archery range. Target: ${shapes[round].name}. A weightless striped mesh spans its gaps. Materials: ${[...new Set(shapes[round].parts.map((p) => String(p[0])).filter((m) => m in MAT))].map((m) => `${m}, density ${MAT[m][1]}`).join("; ")}. ${aimWords()} ${aimLocked ? (powerPaused ? "Aim locked. Meter paused. Arrow keys adjust power; Space shoots." : "Aim locked. Watch the moving power dial; tap or press Space to shoot. Arrow keys pause and adjust power.") : "Arrow keys aim; Enter locks aim."}`,
     );
     $("#arch-round").textContent = `Target ${round + 1} of 3`;
     $("#arch-target-name").textContent = shapes[round].name;
@@ -272,7 +272,7 @@ export function startArchery() {
     powerStarted = performance.now();
     status.textContent = RM
       ? "Aim locked. Use arrow keys to choose power, then shoot."
-      : "Aim locked. Watch the power dial—tap the range or press Space to shoot.";
+      : "Aim locked. Watch the power dial, then tap the range or press Space to shoot.";
     update();
     meterFire.focus({ preventScroll: true });
     say(status.textContent);
@@ -472,13 +472,23 @@ function showResults(shapes: Shape[], rounds: RangeShot[][]) {
   $("#arch-again").onclick = startArchery;
   $("#arch-home").onclick = $("#arch-back").onclick = home;
   $("#arch-copy").onclick = async () => {
-    const text = `Poise Archery · ${total}/900\n${rounds.map((r, i) => `${shapes[i].name}: ${r.map((s) => s.pts).join(" · ")}`).join("\n")}\n${hits}/9 pins landed`;
+    const text = `Poise Archery · ${total}/900\n${hits}/9 pins landed${perfect ? ` · ${perfect} perfect ${perfect === 1 ? "shot" : "shots"}` : ""}\n\n${rounds.map((r, i) => `${shapes[i].name}: ${r.map((s) => s.pts).join(" · ")}`).join("\n")}\n\nCan you beat my range?\nhttps://poisedaily.com/`;
     try {
       await navigator.clipboard.writeText(text);
       $("#arch-copy-status").textContent = "Score copied.";
     } catch {
-      $("#arch-copy-status").textContent =
-        "Could not copy. Your score is still here to select.";
+      const field = document.createElement("textarea");
+      field.value = text;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.body.append(field);
+      field.select();
+      const copied = document.execCommand("copy");
+      field.remove();
+      $("#arch-copy-status").textContent = copied
+        ? "Score copied."
+        : `Copy this score:\n\n${text}`;
     }
   };
   $("#arch-result-title").focus({ preventScroll: true });
@@ -492,7 +502,7 @@ function drawRecap(
   const c = canvas.getContext("2d")!;
   c.fillStyle = css("--card");
   c.fillRect(0, 0, 600, 600);
-  c.drawImage(shape.sp, 80, 80, 440, 440);
+  shapeImage(c, shape, 80, 80, 440, 440);
   const cx = 80 + shape.c[0] * 440,
     cy = 80 + shape.c[1] * 440;
   c.strokeStyle = css("--bg");
@@ -549,18 +559,21 @@ function drawRecap(
 }
 function onShape(shape: Shape, u: number, v: number) {
   if (u < 0 || v < 0 || u >= 1 || v >= 1) return false;
-  const x = Math.floor(u * shape.sp.width),
-    y = Math.floor(v * shape.sp.height),
-    left = Math.max(0, x - 5),
-    top = Math.max(0, y - 5);
-  const data = shape.sp
-    .getContext("2d")!
-    .getImageData(
-      left,
-      top,
-      Math.min(11, shape.sp.width - left),
-      Math.min(11, shape.sp.height - top),
-    ).data;
-  for (let i = 3; i < data.length; i += 4) if (data[i] > 100) return true;
-  return false;
+  const hasVisiblePixel = (canvas: HTMLCanvasElement) => {
+    const x = Math.floor(u * canvas.width),
+      y = Math.floor(v * canvas.height),
+      left = Math.max(0, x - 5),
+      top = Math.max(0, y - 5);
+    const data = canvas
+      .getContext("2d")!
+      .getImageData(
+        left,
+        top,
+        Math.min(11, canvas.width - left),
+        Math.min(11, canvas.height - top),
+      ).data;
+    for (let i = 3; i < data.length; i += 4) if (data[i] > 10) return true;
+    return false;
+  };
+  return hasVisiblePixel(shape.sp) || hasVisiblePixel(shape.mesh);
 }

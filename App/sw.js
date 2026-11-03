@@ -1,4 +1,4 @@
-// Poise service worker: lets the game open and play offline. Today's puzzle only depends on the date, so it works with no network.
+// Pinpoise service worker: lets the game open and play offline. Today's puzzle only depends on the date, so it works with no network.
 // HTML is network-first so a new deploy is picked up as soon as you are online. Hashed assets never change, so they are cache-first.
 const CACHE = 'poise-v8';
 const SHELL = ['./', './manifest.webmanifest', './icon.svg'];

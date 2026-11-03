@@ -195,7 +195,7 @@ function legend(R: Shape) {
   const densities = u.map((t) => MAT[t][1]);
   const minDensity = Math.min(...densities);
   const maxDensity = Math.max(...densities);
-  const items = u
+  const weighted = u
     .map((t) => {
       const name = t[0].toUpperCase() + t.slice(1);
       const density = MAT[t][1];
@@ -208,6 +208,7 @@ function legend(R: Shape) {
       return `<span class="lg-item" role="listitem" style="--material:${color}" aria-label="${name}, ${ratioText} times the lightest material, density ${density} grams per cubic centimetre"><span class="lg-name"><i class="lg-swatch"></i><b>${name}</b><em>${density}</em></span><span class="lg-track" aria-hidden="true"><i style="width:${width}%"></i></span><small class="lg-density"><span class="lg-unit">g/cm³ · </span>${ratioText}×</small></span>`;
     })
     .join("");
+  const items = `<span class="lg-item lg-mesh" role="listitem" aria-label="Weightless mesh, zero density"><span class="lg-name"><i class="lg-swatch"></i><b>Mesh</b><em>0.0</em></span><span class="lg-track" aria-hidden="true"><i></i></span><small class="lg-density"><span class="lg-unit">g/cm³ · </span>0×</small></span>${weighted}`;
   return `<div class="lg-wrap"><div class="lg-title"><b>Density</b></div><div class="lg" role="list" aria-label="Material density, lightest first">${items}</div></div>`;
 }
 const dots = (g: Game) =>
@@ -220,7 +221,7 @@ const TAP_HINT = "Tap to place the pin, drag to adjust, then press Drop pin.";
 /** Plain-language description of the object, for the canvas label. Never says where it balances. */
 function describe(R: Shape) {
   const u = matsOf(R);
-  return `${R.name}. Made of ${u.join(" and ")}${u.length > 1 ? `: ${u[0]} is the lightest, ${u[u.length - 1]} the heaviest` : ""}.`;
+  return `${R.name}. A weightless mesh spans its gaps and adds no mass. Weighted materials: ${u.join(" and ")}${u.length > 1 ? `; ${u[0]} is the lightest and ${u[u.length - 1]} the heaviest` : ""}.`;
 }
 
 function round() {
@@ -240,7 +241,7 @@ function round() {
   const hint = coarse ? TAP_HINT : DRAG_HINT;
   app.innerHTML = `<header class="site-header"><button class="wordmark brand-home" id="brand-home" type="button" aria-label="Home">Pinpoise</button>${navBtns()}</header>
   <div class="round-header"><span class="mute">No. ${noOf(g.d)} / Object ${g.r + 1} of ${RN}</span>${dots(g)}<span class="running-total"><span class="mute">Total</span> <b id="sc">${total(g)}</b><span class="mute"> / 500</span></span></div>
-  <div id="stage"><canvas id="cv"></canvas></div><div class="foot fx" id="ft"><div class="object-heading"><h1 class="lede">${R.name}</h1>${legend(R)}</div><p class="small rule">Aim for the center of mass. It can lie in a gap.</p><span class="mute small" id="hint">${hint}</span><button class="btn" id="dp" disabled>Drop pin</button></div>`;
+  <div id="stage"><canvas id="cv"></canvas></div><div class="foot fx" id="ft"><div class="object-heading"><h1 class="lede">${R.name}</h1>${legend(R)}</div><p class="small rule mesh-rule">The striped mesh weighs 0.0. You can pin anywhere on it.</p><span class="mute small" id="hint">${hint}</span><button class="btn" id="dp" disabled>Drop pin</button></div>`;
   app.scrollTop = 0;
   bindNav();
   mount(draw);

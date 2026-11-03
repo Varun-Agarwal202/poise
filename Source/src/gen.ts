@@ -30,6 +30,8 @@ export interface Shape {
   off: [number, number];
   /** 512px pre-rendered sprite */
   sp: HTMLCanvasElement;
+  /** Zero-mass pinning membrane shown behind empty regions. */
+  mesh: HTMLCanvasElement;
   /** center of mass in unit-box coords, and normalized radius of gyration squared */
   c: [number, number];
   k2: number;
@@ -1163,8 +1165,61 @@ export function prep(raw: Raw, gv = G0, massSize = 384): Shape {
     1500
       ? 1024
       : 512;
-  const sp = mk2(SP);
-  paint(R, ctx(sp), SP, false, R.s, R.off);
+  const sp = mk2(SP),
+    spx = ctx(sp, true);
+  paint(R, spx, SP, false, R.s, R.off);
+  // A weightless backing makes gaps physically legible without changing mass.
+  // It sits behind the real sprite and never marks the center of mass.
+  const mesh = mk2(SP),
+    meshx = ctx(mesh),
+    pixels = spx.getImageData(0, 0, SP, SP).data,
+    edge: [number, number][] = [],
+    stride = Math.max(2, Math.round(SP / 128));
+  for (let y = 0; y < SP; y += stride) {
+    let lo = -1,
+      hi = -1;
+    for (let x = 0; x < SP; x++)
+      if (pixels[(y * SP + x) * 4 + 3] > 30) {
+        if (lo < 0) lo = x;
+        hi = x;
+      }
+    if (lo >= 0) edge.push([lo, y], [hi, y]);
+  }
+  const cross = (o: [number, number], a: [number, number], b: [number, number]) =>
+    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  edge.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const half = (points: [number, number][]) => {
+    const out: [number, number][] = [];
+    for (const point of points) {
+      while (out.length > 1 && cross(out.at(-2)!, out.at(-1)!, point) <= 0)
+        out.pop();
+      out.push(point);
+    }
+    return out;
+  };
+  const hull = [...half(edge), ...half([...edge].reverse()).slice(1, -1)];
+  if (hull.length > 2) {
+    meshx.beginPath();
+    hull.forEach(([x, y], i) => (i ? meshx.lineTo(x, y) : meshx.moveTo(x, y)));
+    meshx.closePath();
+    meshx.fillStyle = "rgba(127,139,146,.055)";
+    meshx.fill();
+    meshx.save();
+    meshx.clip();
+    meshx.strokeStyle = "rgba(127,139,146,.22)";
+    meshx.lineWidth = Math.max(1, SP / 512);
+    const step = SP / 22;
+    for (let n = -SP; n < SP * 2; n += step) {
+      meshx.beginPath();
+      meshx.moveTo(n, SP);
+      meshx.lineTo(n + SP, 0);
+      meshx.stroke();
+    }
+    meshx.restore();
+    meshx.strokeStyle = "rgba(127,139,146,.25)";
+    meshx.setLineDash([SP / 90, SP / 90]);
+    meshx.stroke();
+  }
   // Use a denser hidden raster than the old 160px pass. This keeps narrow
   // features, holes and pixel forms from nudging the calculated balance point.
   const MN = massSize,
@@ -1193,6 +1248,7 @@ export function prep(raw: Raw, gv = G0, massSize = 384): Shape {
       I += w * ((px - cx0) ** 2 + (py - cy0) ** 2);
     }
   R.sp = sp;
+  R.mesh = mesh;
   R.c = [cx0 / MN, cy0 / MN];
   R.k2 = I / s / (MN * MN);
   return R;

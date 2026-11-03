@@ -1,4 +1,5 @@
 import type { Shape } from "./gen";
+import { shapeImage } from "./stage";
 export interface RangeShot {
   x: number;
   y: number;
@@ -242,7 +243,7 @@ export function drawRange(
   c.shadowColor = "#00000020";
   c.shadowBlur = 7;
   c.shadowOffsetY = 5;
-  c.drawImage(shape.sp, -190, -190, 380, 380);
+  shapeImage(c, shape, -190, -190, 380, 380);
   c.restore();
   if (s.review && shots.length === 3) {
     const cx = (shape.c[0] - 0.5) * 380,

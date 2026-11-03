@@ -19,7 +19,7 @@ The home, 2D, 3D, Archery, and results screens must remain usable without horizo
 
 Before release, inspect representative phone portrait (320–430px), phone landscape (760–930px wide and no more than 620px tall), tablet portrait and landscape (768–1366px), and desktop (1280px and wider) viewports. Check each game mode at default and enlarged browser text, including home navigation, canvas interaction, controls, result screens, and rotation or split-screen transitions.
 
-### Daily shape editions — November 2, 2026 rollout
+### Daily shape editions: November 2, 2026 rollout
 
 Generator versions are date-bound in `src/store.ts` and `src/gen.ts`. Preserve released recipes:
 
@@ -30,7 +30,9 @@ Generator versions are date-bound in `src/store.ts` and `src/gen.ts`. Preserve r
 
 The new 2D edition schedules five families per day without a family repeat inside any rolling 16-day window. Seeded width and height proportions produce geometry variants as well as material changes. Families return beyond that window; there is no lifetime-unique archetype guarantee. Material densities, the wide-to-medium-to-close density difficulty progression, scoring, and one scored attempt per shape remain unchanged.
 
-Poise Archery shares the dated normal collection rather than maintaining a separate fixed target list. It selects daily positions 1, 3 and 5, so all three Archery targets change with the date and the third target uses that day’s story silhouette in the new edition.
+Every 2D shape also shows a striped 0.0-density mesh across its gaps. The mesh is a valid pinning surface but contributes no mass, so balance points that fall between weighted pieces are visually understandable without changing the center-of-mass calculation.
+
+Poise Archery shares the dated normal collection rather than maintaining a separate fixed target list. It selects daily positions 1, 3 and 5, so all three Archery targets change with the date and the third target uses that day’s story silhouette in the new edition. Copied Archery results include the score breakdown, a challenge line, and a link to `https://poisedaily.com/`.
 
 `p7` retains the dated `v4-…` IDs allocated by `src/unique.ts`, and the existing schedule still ends on February 4, 2030 inclusive. The IDs are stable date allocations, not a promise that future shapes retain the old v4 contours. The app keeps Archive, Stats and Settings available at the schedule boundary and asks for a new edition. Archive review and the unscored home demonstration remain repeatable.
 

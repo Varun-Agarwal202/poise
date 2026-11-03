@@ -143,9 +143,22 @@ export function sprite(R: Shape, g: Geo, P: Pt, th: number, reveal = 0) {
   x.translate(P.x, P.y);
   x.rotate(th);
   x.translate(-P.x, -P.y);
-  x.drawImage(R.sp, g.o.x, g.o.y, g.B, g.B);
+  shapeImage(x, R, g.o.x, g.o.y, g.B, g.B);
   if (reveal) mark(g.c.x, g.c.y, eob(cl(reveal / 0.6, 0, 1)));
   x.restore();
+}
+
+/** Draw the zero-mass membrane below the real weighted materials. */
+export function shapeImage(
+  x: CanvasRenderingContext2D,
+  R: Shape,
+  dx: number,
+  dy: number,
+  dw: number,
+  dh: number,
+) {
+  if (R.mesh) x.drawImage(R.mesh, dx, dy, dw, dh);
+  x.drawImage(R.sp, dx, dy, dw, dh);
 }
 
 /** The true balance point: an ink ring with a paper keyline, so it reads on any material. */
@@ -203,7 +216,7 @@ export function loupe(R: Shape, g: Geo, P: Pt) {
   x.translate(cx, cy);
   x.scale(zoom, zoom);
   x.translate(-P.x, -P.y);
-  x.drawImage(R.sp, g.o.x, g.o.y, g.B, g.B);
+  shapeImage(x, R, g.o.x, g.o.y, g.B, g.B);
   x.restore();
   x.save();
   x.strokeStyle = view.bg;
@@ -305,7 +318,7 @@ export function thumb(c: HTMLCanvasElement, R: Shape, pl: number[]) {
   const x = c.getContext("2d")!,
     W = c.width,
     r = W * 0.05;
-  x.drawImage(R.sp, 0, 0, W, W);
+  shapeImage(x, R, 0, 0, W, W);
   const cxp = R.c[0] * W,
     cyp = R.c[1] * W,
     px = pl[0] * W,

@@ -823,6 +823,20 @@ canvas {
   background: var(--material);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent);
 }
+.lg-mesh {
+  --material: #7f8b92;
+}
+.lg-mesh .lg-swatch {
+  background-color: color-mix(in srgb, #7f8b92 16%, transparent);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 4px,
+    #7f8b9277 4px 5px
+  );
+}
+.lg-mesh .lg-track i {
+  width: 0 !important;
+}
 .lg-item b {
   overflow: hidden;
   font-size: 0.875rem;
@@ -830,6 +844,12 @@ canvas {
   letter-spacing: -0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+@media (max-width: 959px) and (min-height: 501px) {
+  .play-screen .foot .mesh-rule {
+    display: block;
+    font-size: 0.75rem;
+  }
 }
 .lg-item em {
   color: var(--ink);
@@ -2416,6 +2436,10 @@ dialog::backdrop {
   align-items: center;
   justify-content: center;
   gap: 12px;
+}
+#arch-copy-status {
+  overflow-wrap: anywhere;
+  white-space: pre-line;
 }
 .arch-result-actions .btn {
   min-width: 170px;

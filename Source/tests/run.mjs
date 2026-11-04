@@ -1050,6 +1050,31 @@ writeFileSync(
   JSON.stringify({ date: new Date().toISOString(), checks }, null, 2),
 );
 function runArcheryChecks() {
+  {
+    const ar = env("2026-11-03"),
+      daily = ar.api.store.puzzleOf("2026-11-03"),
+      normalNames = new Set(
+        daily.fams.map((family, index) =>
+          ar.api.gen
+            .mk(daily.seed, index, family, daily.tw)
+            .name.toLowerCase(),
+        ),
+      ),
+      targets = ar.api.archery.archeryShapesFor("2026-11-03");
+    assert.equal(targets.length, 3);
+    assert.equal(new Set(targets.map((shape) => shape.name)).size, 3);
+    targets.forEach((shape) => {
+      assert(!normalNames.has(shape.name.toLowerCase()));
+      assert.deepEqual(
+        [...new Set(shape.parts.filter((part) => part[0] !== "X").map((part) => String(part[0]).replace(/\+$/, "")))],
+        ["wood"],
+      );
+    });
+    ar.close();
+    ok(
+      "Archery uses three separate daily silhouettes with one consistent density",
+    );
+  }
   // Regression: a draw released outside the canvas must fire exactly once,
   // even when pointer capture fails or is lost during a drag.
   {

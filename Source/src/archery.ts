@@ -2,7 +2,8 @@ import { mk, prep, hash, rng, MAT, type Shape } from "./gen";
 import { app, $, cl, css, RM, setTitle, say } from "./dom";
 import { mount, shapeImage, stop, view, watch } from "./stage";
 import { ui, live } from "./game";
-import { puzzleOf, TODAY } from "./store";
+import { dnOf, puzzleOf, TODAY } from "./store";
+import { LAST_DAY_INDEX, UNIQUE_START, uniqueIds } from "./unique";
 import { home } from "./home";
 import { snd, buzz } from "./audio";
 import {
@@ -20,6 +21,42 @@ export { landing } from "./archery-ballistics";
 const POWER_DIAL = `<div id="arch-power-dial" class="arch-power-dial" hidden><span class="arch-power-title">Time your shot</span><svg viewBox="0 0 180 136" fill="none" aria-hidden="true"><path class="arch-power-track" d="M25 110a65 65 0 0 1 130 0"/><path id="arch-power-fill" d="M25 110a65 65 0 0 1 130 0" stroke-dasharray="204.2"/><path class="arch-power-ticks" d="M25 110h7M44 64l5 5M90 45v7M136 64l-5 5M155 110h-7"/><g id="arch-power-needle"><path d="M90 110 31 110"/><circle cx="90" cy="110" r="4"/></g><text x="13" y="132">35</text><text x="167" y="132">100</text></svg><output id="arch-power-value" role="meter" aria-label="Shot strength" aria-valuemin="35" aria-valuemax="100" aria-valuenow="35">35%</output><button id="arch-meter-fire" type="button">Shoot now</button><button id="arch-meter-pause" type="button">Pause meter</button></div>`;
 const WIND_ICON =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 8h12a3 3 0 1 0-3-3M3 12h16a2 2 0 1 1-2 2M3 16h6a3 3 0 1 1-3 3"/></svg>';
+export function archeryShapesFor(date: string) {
+  const daily = puzzleOf(date),
+    normalNames = new Set(
+      daily.fams.map((family, index) =>
+        mk(daily.seed, index, family, daily.tw).name.toLowerCase(),
+      ),
+    ),
+    chosen = new Set<string>(),
+    raws: ReturnType<typeof mk>[] = [],
+    span = LAST_DAY_INDEX - UNIQUE_START + 1,
+    start = dnOf(date);
+  for (let step = 0; step < span && raws.length < 3; step++) {
+    const day =
+        UNIQUE_START +
+        ((((start - UNIQUE_START + 17 + step * 37) % span) + span) % span),
+      seed = `p7|archery${date}:${day}|classic`;
+    uniqueIds(day).forEach((family, index) => {
+      if (raws.length >= 3) return;
+      const raw = mk(seed, index, family);
+      const name = raw.name.toLowerCase();
+      if (normalNames.has(name) || chosen.has(name)) return;
+      raw.parts = raw.parts.map((part) => {
+        if (part[0] === "X") return [...part];
+        const overlay = String(part[0]).endsWith("+") ? "+" : "";
+        return [`wood${overlay}`, ...part.slice(1)];
+      });
+      chosen.add(name);
+      raws.push(raw);
+    });
+  }
+  if (raws.length < 3) throw new Error("Could not build Archery targets");
+  return raws.map((raw, index) => {
+    raw.rot += (index - 1) * 0.08;
+    return prep(raw);
+  });
+}
 export function startArchery() {
   disposeInput?.();
   stop();
@@ -33,14 +70,9 @@ export function startArchery() {
   <div class="arch-bottom"><div><p id="arch-status" role="status">Drag to aim. Release to lock. Then time your power.</p><p id="arch-help">Each shot is farther away, with stronger wind.<span>Keyboard: Enter locks aim; Space fires. Arrows can set power precisely.</span></p></div><div class="arch-shot-controls"><button class="btn" id="arch-fire">Lock aim</button><button class="arch-text-btn" id="arch-adjust" hidden>Adjust aim</button><button class="btn" id="arch-next" hidden>Next shot</button></div></div>`;
   app.scrollTop = 0;
   const random = rng(hash(`archery:${TODAY}`));
-  const daily = puzzleOf(TODAY);
-  // Archery has its own order, but shares the day's authored collection. This
-  // replaces the permanent hammer/spoon/star loop with three fresh targets.
-  const shapes = [0, 2, 4].map((dailyIndex, i) => {
-    const raw = mk(daily.seed, dailyIndex, daily.fams[dailyIndex], daily.tw);
-    raw.rot += (i - 1) * 0.08;
-    return prep(raw);
-  });
+  // Archery uses a separate daily set so the normal puzzle never reveals its
+  // balance points. One material keeps the challenge on aim, wind and power.
+  const shapes = archeryShapesFor(TODAY);
   const rounds: RangeShot[][] = [[], [], []];
   let round = 0,
     wind = 0,

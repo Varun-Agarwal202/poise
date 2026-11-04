@@ -12,6 +12,7 @@ import {
   targetPoint,
   type RangeShot,
 } from "./archery-scene";
+import { swing, step, SEAT, type Swing } from "./physics";
 import { sweptPower } from "./archery-power";
 import { bindDrawInput } from "./archery-input";
 let disposeInput: (() => void) | undefined;
@@ -85,6 +86,9 @@ export function startArchery() {
     aim = { x: 300, y: 170 },
     review = false,
     zoom = 0;
+  // The target swings about the pin that just landed, then eases back to rest.
+  let wobble: { ps: Swing; x: number; y: number; settled: number } | null =
+    null;
   let flight: {
     start: number;
     end: ReturnType<typeof landing>;
@@ -192,6 +196,20 @@ export function startArchery() {
         )
       : 0;
     shots().push({ x, y, pts, hit, cm: (distance / 380) * 38.5 });
+    wobble = null;
+    if (hit && !RM) {
+      const { ps } = swing(
+        shape,
+        {
+          B: 380,
+          o: { x: -190, y: -190 },
+          c: { x: (shape.c[0] - 0.5) * 380, y: (shape.c[1] - 0.5) * 380 },
+        },
+        { x: x - 300, y: y - 210 },
+        SEAT,
+      );
+      if (ps.amp > 0) wobble = { ps, x: x - 300, y: y - 210, settled: 0 };
+    }
     flight = null;
     aimLocked = false;
     review = true;
@@ -245,6 +263,7 @@ export function startArchery() {
     }
     review = false;
     aimLocked = false;
+    wobble = null;
     impact.hidden = true;
     setWind();
     update();
@@ -433,6 +452,15 @@ export function startArchery() {
       h = view.f.h / scale;
     c.save();
     c.scale(scale, scale);
+    let swayAngle = 0;
+    if (wobble) {
+      step(wobble.ps, dt);
+      if (!wobble.settled && (wobble.ps.calm > 0.14 || wobble.ps.t > 4))
+        wobble.settled = t;
+      const u = wobble.settled ? cl((t - wobble.settled) / 260, 0, 1) : 0;
+      swayAngle = wobble.ps.th * (1 - u) ** 3;
+      if (u >= 1) wobble = null;
+    }
     let flying: null | { u: number; x: number; y: number } = null;
     if (flight) {
       const u = RM ? 1 : cl((t - flight.start) / (flight.end.time * 950), 0, 1);
@@ -465,6 +493,7 @@ export function startArchery() {
       review,
       reduced: RM,
       flight: flying,
+      wobble: wobble ? { x: wobble.x, y: wobble.y, th: swayAngle } : null,
     });
     c.restore();
     const sight = targetPoint(300, 8, { height: h, zoom: 0, distance });

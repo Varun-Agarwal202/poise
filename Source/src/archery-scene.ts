@@ -88,6 +88,8 @@ interface Scene {
   review: boolean;
   reduced: boolean;
   flight: { u: number; x: number; y: number } | null;
+  /** Shape swinging about its newest pin; x/y are target-local, th in radians. */
+  wobble?: { x: number; y: number; th: number } | null;
 }
 function line(
   c: CanvasRenderingContext2D,
@@ -240,6 +242,12 @@ export function drawRange(
       c.fill();
     }
   c.save();
+  if (s.wobble) {
+    c.translate(s.wobble.x, s.wobble.y);
+    c.rotate(s.wobble.th);
+    c.translate(-s.wobble.x, -s.wobble.y);
+  }
+  c.save();
   c.shadowColor = "#00000020";
   c.shadowBlur = 7;
   c.shadowOffsetY = 5;
@@ -273,6 +281,7 @@ export function drawRange(
     c.arc(x + 7, y - 18, 5, 0, Math.PI * 2);
     c.fill();
   }
+  c.restore();
   c.restore();
   // Windsock at target depth. Its direction is the same wind used by the shot.
   const flagX = 83,

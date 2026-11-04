@@ -32,7 +32,7 @@ The new 2D edition schedules five families per day without a family repeat insid
 
 Every 2D shape also shows a striped 0.0-density mesh across its gaps. The mesh is a valid pinning surface but contributes no mass, so balance points that fall between weighted pieces are visually understandable without changing the center-of-mass calculation.
 
-Poise Archery uses its own deterministic daily set of three recognizable silhouettes. It filters out every shape name in that date’s normal five and gives every visible target part the same wood density, so the normal puzzle cannot reveal an Archery answer and Archery stays focused on aim, wind, distance, and power. Copied Archery results include the score breakdown, a challenge line, and a link to `https://poisedaily.com/`.
+Poise Archery uses its own deterministic daily set of three recognizable silhouettes. It filters out every shape name in that date’s normal five and gives every visible target part the same wood density, so the normal puzzle cannot reveal an Archery answer and Archery stays focused on aim, wind, distance, and power. Copied Archery results include only the score breakdown and a link to `https://poisedaily.com/`.
 
 `p7` retains the dated `v4-…` IDs allocated by `src/unique.ts`, and the existing schedule still ends on February 4, 2030 inclusive. The IDs are stable date allocations, not a promise that future shapes retain the old v4 contours. The app keeps Archive, Stats and Settings available at the schedule boundary and asks for a new edition. Archive review and the unscored home demonstration remain repeatable.
 

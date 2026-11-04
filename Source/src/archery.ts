@@ -504,7 +504,7 @@ function showResults(shapes: Shape[], rounds: RangeShot[][]) {
   $("#arch-again").onclick = startArchery;
   $("#arch-home").onclick = $("#arch-back").onclick = home;
   $("#arch-copy").onclick = async () => {
-    const text = `Poise Archery · ${total}/900\n${hits}/9 pins landed${perfect ? ` · ${perfect} perfect ${perfect === 1 ? "shot" : "shots"}` : ""}\n\n${rounds.map((r, i) => `${shapes[i].name}: ${r.map((s) => s.pts).join(" · ")}`).join("\n")}\n\nCan you beat my range?\nhttps://poisedaily.com/`;
+    const text = `Poise Archery · ${total}/900\n${hits}/9 pins landed${perfect ? ` · ${perfect} perfect ${perfect === 1 ? "shot" : "shots"}` : ""}\n\n${rounds.map((r, i) => `${shapes[i].name}: ${r.map((s) => s.pts).join(" · ")}`).join("\n")}\n\nhttps://poisedaily.com/`;
     try {
       await navigator.clipboard.writeText(text);
       $("#arch-copy-status").textContent = "Score copied.";

@@ -95,4 +95,5 @@ Restored from the original palette after the warm direction was rejected.
 - Use five different construction families per day, not five variations of a shared tiled contour system.
 - Build each daily five as a deliberate mix: recognizable objects first, then stranger organic or mechanical constructions such as molecules, twigs and welded hybrids.
 - Preserve each family's character with near-upright rotations and meaningful material placement.
+- A named creature must read without its label. Build from defining landmarks such as profile, muzzle or beak, ears or horns, limb count, tail and wing attachment before adding material detail.
 - Keep material colors distinct without making them loud: earthy wood, ocean-blue plastic, cool glass and metal, warm brass and gold.

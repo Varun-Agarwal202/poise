@@ -1452,6 +1452,23 @@ function runDiversityChecks() {
     shape.sp._canvas.width = 1;
     shape.sp._canvas.height = 1;
   }
+  for (const [id, minimumLimbParts] of [
+    ["pegasus", 4],
+    ["unicorn", 4],
+    ["gryphon", 2],
+  ]) {
+    const parts = a.novel.NOVEL_OBJECTS[id].make(
+      () => 0.5,
+      (low, high) => (low + high) / 2,
+      (index) => ["wood", "plastic", "steel"][index % 3],
+    );
+    assert(parts.filter((part) => part[0] !== "X").length >= 10);
+    assert(parts.some((part) => part[0] === "X"));
+    assert(
+      parts.filter((part) => part[1] === "p" && part.length === 10).length >=
+        minimumLimbParts,
+    );
+  }
   mkdirSync(".taste-skill/qa", { recursive: true });
   writeFileSync(
     ".taste-skill/qa/novel-2d-catalogue.png",

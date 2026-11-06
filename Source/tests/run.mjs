@@ -381,7 +381,7 @@ for (let n = 3; n <= e.api.unique.LAST_DAY_INDEX; n++) {
     console.log(`Checking catalogue: ${n - 3} / 1,200 days`);
   const p = store.puzzleOf(store.dateOfNo(n + 1));
   assert.equal(
-    p.seed.startsWith(n >= 13 ? "p7|" : n >= 6 ? "p6|" : "p4|"),
+    p.seed.startsWith(n >= 12 ? "p7|" : n >= 6 ? "p6|" : "p4|"),
     true,
   );
   assert.equal(new Set(p.fams).size, 5);
@@ -600,6 +600,19 @@ assert(!drop3d.disabled);
 drop3d.click();
 play3d.frame();
 assert(play3d.w.document.querySelector(".result3"));
+assert(!play3d.w.document.querySelector("#rotate3").disabled);
+assert(play3d.w.document.querySelector("#pin3").disabled);
+assert.match(
+  play3d.w.document.querySelector("#result-hint3").textContent,
+  /rotate/i,
+);
+canvas3d.dispatchEvent(
+  new play3d.w.KeyboardEvent("keydown", {
+    key: "ArrowRight",
+    cancelable: true,
+  }),
+);
+assert.equal(play3d.frame(), 1);
 play3d.w.document.querySelector("#next3").click();
 assert(
   play3d.w.document
@@ -1050,6 +1063,19 @@ writeFileSync(
   JSON.stringify({ date: new Date().toISOString(), checks }, null, 2),
 );
 function runArcheryChecks() {
+  {
+    const ar = env();
+    assert.equal(ar.api.archery.scoreArchery(12), 100);
+    assert(ar.api.archery.scoreArchery(13) < 100);
+    let previous = 101;
+    for (let distance = 0; distance <= 380; distance += 1) {
+      const score = ar.api.archery.scoreArchery(distance);
+      assert(score <= previous);
+      previous = score;
+    }
+    ar.close();
+    ok("Archery uses a tighter perfect zone and monotonic score falloff");
+  }
   {
     const ar = env("2026-11-03"),
       daily = ar.api.store.puzzleOf("2026-11-03"),

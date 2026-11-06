@@ -684,6 +684,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       if (t > (RM ? 0.05 : 1.65)) {
         phase = "result";
         q = qmul(qaxis(axis, angle), startQ);
+        qt = q;
         showResult();
       }
     }
@@ -779,7 +780,8 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       .find((item) => item.uv && item.face.normal[2] > 0.06);
 
   const setHint = (text: string) => {
-    if (hint.textContent !== text) hint.textContent = text;
+    const target = document.querySelector<HTMLElement>("#result-hint3") ?? hint;
+    if (target.textContent !== text) target.textContent = text;
   };
 
   const updateHover = (x: number, y: number) => {
@@ -818,7 +820,7 @@ function playRound(set: Shape3D[], results: Result3D[]) {
   };
 
   const setTool = (next: "rotate" | "pin") => {
-    if (phase !== "aim") return;
+    if (phase === "drop" || (phase === "result" && next === "pin")) return;
     tool = next;
     stage.classList.toggle("tool-rotate", next === "rotate");
     stage.classList.toggle("tool-pin", next === "pin");
@@ -836,7 +838,9 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     );
     canvas.setAttribute(
       "aria-label",
-      next === "rotate"
+      phase === "result"
+        ? "Three-dimensional result. The balance point and your pin are shown. Drag or use the arrow keys to rotate and inspect them."
+        : next === "rotate"
         ? "Three-dimensional object. Drag or use the arrow keys to rotate it."
         : "Three-dimensional object. Tap a visible surface, or move with the arrow keys and press Enter to place the pin.",
     );
@@ -855,15 +859,21 @@ function playRound(set: Shape3D[], results: Result3D[]) {
   };
 
   canvas.onpointerdown = (event) => {
-    if (phase !== "aim") return;
+    if (phase === "drop") return;
     const [x, y] = localPoint(event);
     canvas.setPointerCapture(event.pointerId);
-    down = { x, y, q: qt, moved: false, tool };
+    down = {
+      x,
+      y,
+      q: qt,
+      moved: false,
+      tool: phase === "result" ? "rotate" : tool,
+    };
     cursor = [x, y];
-    if (tool === "pin") place(x, y);
+    if (phase === "aim" && tool === "pin") place(x, y);
   };
   canvas.onpointermove = (event) => {
-    if (phase !== "aim") return;
+    if (phase === "drop") return;
     const [x, y] = localPoint(event);
     cursor = [x, y];
     if (!down) {
@@ -881,7 +891,9 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       qt = qmul(trackballRotation(down.x, down.y, x, y, W, H), down.q);
       renderedFaces = [];
       setHint(
-        pinLocal
+        phase === "result"
+          ? "Release to inspect this angle."
+          : pinLocal
           ? "Release to inspect the pin."
           : "Release when the view feels right.",
       );
@@ -894,7 +906,9 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     down = null;
     if (rotated)
       setHint(
-        pinLocal
+        phase === "result"
+          ? "Drag again to compare your pin with the balance point."
+          : pinLocal
           ? "Switch to Place pin to adjust, or drop when ready."
           : "Switch to Place pin and choose a visible surface.",
       );
@@ -906,9 +920,9 @@ function playRound(set: Shape3D[], results: Result3D[]) {
     }
   };
   canvas.onkeydown = (event) => {
-    if (phase !== "aim") return;
+    if (phase === "drop") return;
     if (event.key.toLowerCase() === "r") setTool("rotate");
-    else if (event.key.toLowerCase() === "p") setTool("pin");
+    else if (phase === "aim" && event.key.toLowerCase() === "p") setTool("pin");
     else if (tool === "rotate" && event.key.startsWith("Arrow")) {
       const axis: V3 =
         event.key === "ArrowLeft" || event.key === "ArrowRight"
@@ -942,7 +956,17 @@ function playRound(set: Shape3D[], results: Result3D[]) {
       grade = GRADES[gi(pts)][1],
       foot = $("#foot3");
     stage.classList.add("is-result");
-    foot.innerHTML = `<div class="result3"><div><span class="big">${grade}</span><p class="mute small">${errorCm.toFixed(1)} cm from the balance line</p></div><strong>+${pts}</strong></div><button class="btn" id="next3">${round === RN3 - 1 ? "See 3D result" : "Next object"}</button>`;
+    foot.innerHTML = `<div class="result3"><div><span class="big">${grade}</span><p class="mute small">${errorCm.toFixed(1)} cm from the balance line</p></div><strong>+${pts}</strong></div><p class="mute small" id="result-hint3">Drag to rotate and compare your pin with the balance point.</p><button class="btn" id="next3">${round === RN3 - 1 ? "See 3D result" : "Next object"}</button>`;
+    tool = "rotate";
+    rotateButton.disabled = false;
+    rotateButton.setAttribute("aria-pressed", "true");
+    pinButton.setAttribute("aria-pressed", "false");
+    stage.classList.add("tool-rotate");
+    stage.classList.remove("tool-pin");
+    canvas.setAttribute(
+      "aria-label",
+      "Three-dimensional result. The balance point and your pin are shown. Drag or use the arrow keys to rotate and inspect them.",
+    );
     const next = $<HTMLButtonElement>("#next3");
     next.onclick = () => {
       const updated = [...results, { pts, cm: errorCm, name: shape.name }];

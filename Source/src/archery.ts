@@ -19,6 +19,13 @@ let disposeInput: (() => void) | undefined;
 
 import { landing, shotConditions } from "./archery-ballistics";
 export { landing } from "./archery-ballistics";
+export const scoreArchery = (distance: number) =>
+  distance <= 12
+    ? 100
+    : Math.min(
+        99,
+        Math.round(100 * Math.exp(-Math.pow((distance - 12) / 78, 1.35))),
+      );
 const POWER_DIAL = `<div id="arch-power-dial" class="arch-power-dial" hidden><span class="arch-power-title">Time your shot</span><svg viewBox="0 0 180 136" fill="none" aria-hidden="true"><path class="arch-power-track" d="M25 110a65 65 0 0 1 130 0"/><path id="arch-power-fill" d="M25 110a65 65 0 0 1 130 0" stroke-dasharray="204.2"/><path class="arch-power-ticks" d="M25 110h7M44 64l5 5M90 45v7M136 64l-5 5M155 110h-7"/><g id="arch-power-needle"><path d="M90 110 31 110"/><circle cx="90" cy="110" r="4"/></g><text x="13" y="132">35</text><text x="167" y="132">100</text></svg><output id="arch-power-value" role="meter" aria-label="Shot strength" aria-valuemin="35" aria-valuemax="100" aria-valuenow="35">35%</output><button id="arch-meter-fire" type="button">Shoot now</button><button id="arch-meter-pause" type="button">Pause meter</button></div>`;
 const WIND_ICON =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 8h12a3 3 0 1 0-3-3M3 12h16a2 2 0 1 1-2 2M3 16h6a3 3 0 1 1-3 3"/></svg>';
@@ -190,11 +197,7 @@ export function startArchery() {
       v = (y - 20) / 380;
     const hit = onShape(shape, u, v),
       distance = Math.hypot((u - shape.c[0]) * 380, (v - shape.c[1]) * 380);
-    const pts = hit
-      ? Math.round(
-          100 * Math.exp(-Math.pow(Math.max(0, distance - 16) / 85, 1.35)),
-        )
-      : 0;
+    const pts = hit ? scoreArchery(distance) : 0;
     shots().push({ x, y, pts, hit, cm: (distance / 380) * 38.5 });
     wobble = null;
     if (hit && !RM) {
